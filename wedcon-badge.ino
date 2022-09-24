@@ -170,13 +170,13 @@ void loop() {
 
 void blink(uint num) {
   digitalWrite(LED_BUILTIN, LOW);
-  delay(50);
+  delay(5);
   digitalWrite(LED_BUILTIN, HIGH);
 
   for (uint n = 0; n < num; n++) {
-    delay(50);
+    delay(150);
     digitalWrite(LED_BUILTIN, LOW);
-    delay(50);
+    delay(5);
     digitalWrite(LED_BUILTIN, HIGH);
   }
 }

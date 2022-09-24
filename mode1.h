@@ -7,7 +7,7 @@
 #define MODE_1_WIFI_SSID_GROOM      "20221111_madisonroyal__groom"
 #define MODE_1_WIFI_RSSI_HIGH       -50
 #define MODE_1_WIFI_RSSI_LOW        -60
-#define MODE_1_PROXIMITY_TIMEOUT    2000
+#define MODE_1_PROXIMITY_TIMEOUT    1000
 
 
 // count and ESP pin# for LEDs
