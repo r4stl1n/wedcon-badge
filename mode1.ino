@@ -11,6 +11,7 @@ static uint Mode_1_hue = 0;
 static unsigned long Mode_1_lastSeenBride = 0;
 static unsigned long Mode_1_lastSeenGroom = 0;
 static bool Mode_1_scanningForBride = false;
+static int Mode_1_alert = MODE_1_ALERT_COUNT;
 
 static void Mode_1_updateRSSI();
 static void Mode_1_updateLEDs();
@@ -85,8 +86,12 @@ void Mode_1_updateLEDs() {
   } else {
     FastLED.showColor(CHSV(Mode_1_hue++, MODE_1_SAT_NONE, MODE_1_BRIGHTNESS_NONE)); 
   }
-      
-  delay(20);
+
+  if (Mode_1_alert < MODE_1_ALERT_COUNT) {
+    Mode_1_alert++;
+  } else {
+      delay(20);
+  }
 }
 
 
@@ -141,27 +146,24 @@ int32_t Mode_1_evalRSSI(int scanResult) {
 
 unsigned long Mode_1_evalLastSeen(unsigned long lastSeen, int32_t maxRSSI) {
   if (maxRSSI >= MODE_1_WIFI_RSSI_HIGH) {
-    Serial.println("on");
+    if (lastSeen == 0 && Mode_1_alert >= MODE_1_ALERT_COUNT) {
+      Mode_1_alert = 0;
+    }
+
     return millis();
   }
 
   if (lastSeen == 0) {
-    Serial.println("never");
     return 0;    
   }
   
   if ((millis() - lastSeen) > MODE_1_PROXIMITY_TIMEOUT) {
-    Serial.println("timeout");
     return 0;    
   }
   
   if (maxRSSI >= MODE_1_WIFI_RSSI_LOW) {
-    Serial.println("near");
     return millis();
   }
-
-  Serial.printf(" delta: %dms\n", millis() - lastSeen);
-
-  Serial.println(".");
+  
   return lastSeen;
 }

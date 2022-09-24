@@ -34,6 +34,9 @@
 #define MODE_1_BRIGHTNESS_NONE  50            
 #define MODE_1_SAT_NONE         150           // medium saturation (color=cycling rainbow)
 
+#define MODE_1_ALERT_CYCLES     5
+#define MODE_1_ALERT_COUNT      (MODE_1_ALERT_CYCLES * (MODE_1_BRIGHTNESS_HIGH - MODE_1_BRIGHTNESS_LOW) * 2)
+
 
 void Mode_1_Init();
 void Mode_1_Loop();
