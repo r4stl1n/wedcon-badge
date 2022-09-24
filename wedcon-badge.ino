@@ -1,4 +1,5 @@
 #include <Bounce2.h>
+#include <FS.h>
 #include "mode1.h"
 
 
@@ -22,6 +23,10 @@ void setup() {
   Serial.begin(115200);
   Serial.println("");
   Serial.printf("mode: %d\n", mode + 1);
+
+  //Initialize File System
+  SPIFFS.begin();
+  Serial.println("File System Initialized");
 
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
@@ -69,7 +74,7 @@ void loop() {
       break;
       
     case ModeCustom:
-      // todo: call your code here
+      Mode_2_Shutdown();
       break;
       
     case ModeExpert:
@@ -87,7 +92,7 @@ void loop() {
       break;
       
     case ModeCustom:
-      // todo: call your code here
+      Mode_2_Init();
       break;
       
     case ModeExpert:
@@ -106,7 +111,7 @@ void loop() {
       break;
       
     case ModeCustom:
-      // todo: call your code here
+      Mode_2_Loop();
       break;
       
     case ModeExpert:
