@@ -87,18 +87,40 @@ function saveScript() {
         }
     }
 
-    Toastify({
-        text: "Saved Script",
-        duration: 1000,
-        destination: "https://github.com/apvarun/toastify-js",
-        newWindow: false,
-        close: true,
-        gravity: "top", // `top` or `bottom`
-        position: "right", // `left`, `center` or `right`
-        stopOnFocus: true, // Prevents dismissing of toast on hover
-        style: {
-            background: "#32b643",
+    var details = {
+        'script': document.getElementById('ledscript').value,
+    };
+
+    var formBody = [];
+    for (var property in details) {
+        var encodedKey = encodeURIComponent(property);
+        var encodedValue = encodeURIComponent(details[property]);
+        formBody.push(encodedKey + "=" + encodedValue);
+    }
+    formBody = formBody.join("&");
+
+    fetch("/save", {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
         },
-        onClick: function() {} // Callback after click
-    }).showToast();
+        body: formBody
+    }).then(res => {
+        Toastify({
+            text: "Saved Script",
+            duration: 1000,
+            destination: "https://github.com/apvarun/toastify-js",
+            newWindow: false,
+            close: true,
+            gravity: "top", // `top` or `bottom`
+            position: "right", // `left`, `center` or `right`
+            stopOnFocus: true, // Prevents dismissing of toast on hover
+            style: {
+                background: "#32b643",
+            },
+            onClick: function() {} // Callback after click
+        }).showToast();
+    });
+
+
 }

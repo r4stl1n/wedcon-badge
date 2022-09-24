@@ -1,18 +1,18 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <FastLED.h>
-
+#include <SD.h>
 #include "mode2.h"
 
 
-static CRGB Mode_2_leds[MODE_1_NUM_LEDS];
+static CRGB Mode_2_leds[MODE_2_NUM_LEDS];
 static uint Mode_2_brightness = 0;
 static uint Mode_2_hue = 0;
 static ESP8266WebServer server(80);
 
-static void Mode_2_handleWebClient(WiFiClient client);
-
 String header;
+
+struct ScriptLine script[MODE_2_MAX_SCRIPT_SIZE];
 
 void Mode_2_Init() {
 
@@ -20,17 +20,26 @@ void Mode_2_Init() {
   FastLED.addLeds<NEOPIXEL, MODE_1_DATA_PIN>(Mode_1_leds, MODE_1_NUM_LEDS);
 
   // Setup the wifi access point
+  // Server ip is 192.168.4.1
   Serial.print("Setting up wifi network: ");
   Serial.println(MODE_2_WIFI_SSID);
   Serial.println(WiFi.softAP(MODE_2_WIFI_SSID, "", MODE_2_WIFI_CHANNEL, 10) ? "Ready" : "Failed!");
+
+  SD.begin(D8);
+
+  // Loading initial file state
+  Serial.println("Loading initial file state");
+  Mode_2_readFileToScript();
 
   // Start the esp8266 webserver
   server.begin();
 
   // Create the page handlers
-  server.on("/", Mode_2_handleOnIndex);
-
+  server.on("/", HTTP_GET, Mode_2_handleOnIndex);
+  server.on("/save", HTTP_POST, Mode_2_handleOnSave);
+  
   server.onNotFound(Mode_2_handleNotFound); 
+
 }
 
 
@@ -44,10 +53,61 @@ void Mode_2_Shutdown() {
 
 
 void Mode_2_Loop() {
-  
   server.handleClient();
+} 
 
+void Mode_2_readFileToScript() {
+  File scriptFile = SPIFFS.open("/mode2-script.txt","r");
+ 
+  if(!scriptFile){
+      Serial.println("No script file currently exist");
+      return;
+  }
 
+  while(scriptFile.available()){
+  //    Serial.write(scriptFile.read());
+  }
+
+  scriptFile.close();
+}
+
+void handleEachLine(char line[]) {
+    Serial.println(String(line));
+}
+
+void Mode_2_handleOnIndex() {
+  server.sendHeader("Location", "/mode2.html",true);   //Redirect to our html web page
+  server.send(302, "text/plane","");
+}
+
+void Mode_2_handleOnSave() {
+  
+    if( ! server.hasArg("script")) {
+        server.send(400, "text/plain", "400: Invalid Request");
+        return;
+    }
+
+    File file = SPIFFS.open("/mode2-script.txt", "w");
+   
+    if (!file) {
+      Serial.println("Error opening file for writing");
+      return;
+    }
+
+    Serial.println(server.arg("script"));
+   
+    int bytesWritten = file.print(server.arg("script"));
+
+    Serial.println(bytesWritten);
+  
+    file.close();
+    
+    if (bytesWritten < 0) {
+      Serial.println("Failed to write script to flash");
+      return;
+    }
+    
+    Serial.println("Script recorded to flash");
 }
 
 bool Mode_2_loadFromSpiffs(String path){
@@ -73,11 +133,6 @@ bool Mode_2_loadFromSpiffs(String path){
 
   dataFile.close();
   return true;
-}
-
-void Mode_2_handleOnIndex() {
-  server.sendHeader("Location", "/mode2.html",true);   //Redirect to our html web page
-  server.send(302, "text/plane","");
 }
 
 void Mode_2_handleNotFound(){
