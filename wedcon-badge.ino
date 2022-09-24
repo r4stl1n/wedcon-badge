@@ -2,6 +2,7 @@
 #include "mode1.h"
 
 
+// EPS pin# of FLASH/PROGRAM/MODE button (left button)
 #define BUTTON_PIN 	0
 
 enum Modes {
@@ -31,6 +32,7 @@ void setup() {
   Mode_1_Init();
 }
 
+
 void blink(uint num) {
   digitalWrite(LED_BUILTIN, LOW);
   delay(100);
@@ -43,6 +45,7 @@ void blink(uint num) {
     digitalWrite(LED_BUILTIN, HIGH);
   }
 }
+
 
 void loop() {
 	button.update();
