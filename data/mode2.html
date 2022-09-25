@@ -35,6 +35,15 @@
     .tab-locator:nth-of-type(3):checked ~ .tabs > .tab-content:nth-of-type(3) {
     display:block;
     }
+
+    .led-layout {
+      width: 350px;
+      height: 350px;
+      background-image: url('TreeBadge.png');
+      background-size: contain;
+      align-content: center;
+      background-repeat: no-repeat;
+    }
     </style>
     <link rel="stylesheet" href="toast.css">
     <script type="text/javascript" src="common.js"></script>
@@ -62,14 +71,9 @@
       <div class="tabs">
         <div class="tab-content">
           <div class="container" align="center">
-            <div class="columns" style="width: 500px;height: 500px;background-image: url('TreeBadge.png');background-size: contain">
+            <div class="columns led-layout" >
               <table style="border:0px" align="center">
                 <!-- row 0 -->
-                <tr>
-                  <td height="20px">
-                    &nbsp;
-                  </td>
-                </tr>
                 <!-- row 1 -->
                 <tr>
                   <td width="10%" height="50px">
@@ -124,7 +128,7 @@
                 </tr>
                 <!-- row 4 -->
                 <tr>
-                  <td height="50px">
+                  <td height="90px">
                     &nbsp;
                   </td>
                 </tr>
