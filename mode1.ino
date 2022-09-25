@@ -36,7 +36,7 @@ void Mode_1_Shutdown() {
   WiFi.scanDelete();
   WiFi.disconnect();
 
-  FastLED.showColor(CHSV(0, 0, 0)); 
+  FastLED.showColor(CHSV(0, 0, 0));
   FastLED.clear();
 }
 
@@ -58,7 +58,7 @@ void Mode_1_scanForCouple() {
       return;
 
     case -2:
-      Serial.printf("WiFi scan error\n");   
+      Serial.printf("WiFi scan error\n");
       break;
 
     default:
@@ -78,19 +78,19 @@ void Mode_1_scanForCouple() {
 
 void Mode_1_updateLEDs() {
   if (Mode_1_lastSeenBride > 0 && Mode_1_lastSeenGroom > 0) {
-    FastLED.showColor(CHSV(MODE_1_HUE_BOTH, MODE_1_SAT_BOTH, Mode_1_getNewBrightness()));  
+    FastLED.showColor(CHSV(MODE_1_HUE_BOTH, MODE_1_SAT_BOTH, Mode_1_getNewBrightness()));
   } else if (Mode_1_lastSeenBride > 0 && Mode_1_lastSeenGroom == 0) {
-    FastLED.showColor(CHSV(MODE_1_HUE_BRIDE, MODE_1_SAT_BRIDE, Mode_1_getNewBrightness())); 
+    FastLED.showColor(CHSV(MODE_1_HUE_BRIDE, MODE_1_SAT_BRIDE, Mode_1_getNewBrightness()));
   } else if (Mode_1_lastSeenBride == 0 && Mode_1_lastSeenGroom > 0) {
-    FastLED.showColor(CHSV(MODE_1_HUE_GROOM, MODE_1_SAT_GROOM, Mode_1_getNewBrightness())); 
+    FastLED.showColor(CHSV(MODE_1_HUE_GROOM, MODE_1_SAT_GROOM, Mode_1_getNewBrightness()));
   } else {
-    FastLED.showColor(CHSV(Mode_1_hue++, MODE_1_SAT_NONE, MODE_1_BRIGHTNESS_NONE)); 
+    FastLED.showColor(CHSV(Mode_1_hue++, MODE_1_SAT_NONE, MODE_1_BRIGHTNESS_NONE));
   }
 
   if (Mode_1_alert < MODE_1_ALERT_COUNT) {
     Mode_1_alert++;
   } else {
-      delay(20);
+    delay(20);
   }
 }
 
@@ -111,7 +111,7 @@ void Mode_1_launchWifiScan() {
 int32_t Mode_1_evalRSSI(int scanResult) {
   int32_t maxRSSI = -1000;
   for (int n = 0; n < scanResult; n++)
-  {      
+  {
     String ssid;
     uint8_t encryptionType;
     int32_t rssi;
@@ -154,16 +154,16 @@ unsigned long Mode_1_evalLastSeen(unsigned long lastSeen, int32_t maxRSSI) {
   }
 
   if (lastSeen == 0) {
-    return 0;    
+    return 0;
   }
-  
+
   if ((millis() - lastSeen) > MODE_1_PROXIMITY_TIMEOUT) {
-    return 0;    
+    return 0;
   }
-  
+
   if (maxRSSI >= MODE_1_WIFI_RSSI_LOW) {
     return millis();
   }
-  
+
   return lastSeen;
 }

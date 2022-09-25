@@ -31,7 +31,7 @@
 #define MODE_1_SAT_GROOM        150           // medium saturation
 
 // none = no wedding party detected
-#define MODE_1_BRIGHTNESS_NONE  50            
+#define MODE_1_BRIGHTNESS_NONE  50
 #define MODE_1_SAT_NONE         150           // medium saturation (color=cycling rainbow)
 
 #define MODE_1_ALERT_CYCLES     5

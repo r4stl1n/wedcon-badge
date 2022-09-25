@@ -38,18 +38,18 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
 
-	button.attach(BUTTON_PIN, INPUT_PULLUP);
-	button.interval(25);
+  button.attach(BUTTON_PIN, INPUT_PULLUP);
+  button.interval(25);
 
   Mode_1_Init();
 }
 
 
 void loop() {
-	button.update();
+  button.update();
 
   uint oldMode = mode;
-	if (button.fell()) {
+  if (button.fell()) {
     mode = (mode + 1) % (ModeMax + 1);
     blink(mode);
 
@@ -58,75 +58,75 @@ void loop() {
 
   if (oldMode != mode) {
     switch (oldMode) {
-    case ModeProximity:
-      Mode_1_Shutdown();
-      break;
+      case ModeProximity:
+        Mode_1_Shutdown();
+        break;
 
-    case ModeOff:
-      // nothing to do here
-      break;
-      
-    case ModeCustom:
-      Mode_2_Shutdown();
-      break;
-      
-    case ModeExpert:
-      // todo: call your code here
-      break;
+      case ModeOff:
+        // nothing to do here
+        break;
 
-    case ModeTest1:
-      FastLED.showColor(CHSV(0, 0, 0)); 
-      FastLED.clear();
-      break;
+      case ModeCustom:
+        Mode_2_Shutdown();
+        break;
 
-    case ModeTest2:
-      FastLED.showColor(CHSV(0, 0, 0)); 
-      FastLED.clear();
-      break;
+      case ModeExpert:
+        // todo: call your code here
+        break;
 
-    case ModeTest3:
-      FastLED.showColor(CHSV(0, 0, 0)); 
-      FastLED.clear();
-      break;
+      case ModeTest1:
+        FastLED.showColor(CHSV(0, 0, 0));
+        FastLED.clear();
+        break;
 
-    case ModeTest4:
-      FastLED.showColor(CHSV(0, 0, 0)); 
-      FastLED.clear();
-      break;
+      case ModeTest2:
+        FastLED.showColor(CHSV(0, 0, 0));
+        FastLED.clear();
+        break;
+
+      case ModeTest3:
+        FastLED.showColor(CHSV(0, 0, 0));
+        FastLED.clear();
+        break;
+
+      case ModeTest4:
+        FastLED.showColor(CHSV(0, 0, 0));
+        FastLED.clear();
+        break;
     }
 
     switch (mode) {
-    case ModeProximity:
-      Mode_1_Init();
-      break;
+      case ModeProximity:
+        Mode_1_Init();
+        break;
 
-    case ModeOff:
-      // nothing to do here
-      break;
-      
-    case ModeCustom:
-      Mode_2_Init();
-      break;
-      
-    case ModeExpert:
-      // todo: call your code here
-      break;
+      case ModeOff:
+        // nothing to do here
+        break;
 
-    case ModeTest1:
-      FastLED.addLeds<NEOPIXEL, MODE_1_DATA_PIN>(Mode_Test_leds, MODE_1_NUM_LEDS);
-      break;
+      case ModeCustom:
+        Mode_2_Init();
+        break;
 
-    case ModeTest2:
-      FastLED.addLeds<NEOPIXEL, MODE_1_DATA_PIN>(Mode_Test_leds, MODE_1_NUM_LEDS); 
-      break;
+      case ModeExpert:
+        // todo: call your code here
+        break;
 
-    case ModeTest3:
-      FastLED.addLeds<NEOPIXEL, MODE_1_DATA_PIN>(Mode_Test_leds, MODE_1_NUM_LEDS);
-      break;
+      case ModeTest1:
+        FastLED.addLeds<NEOPIXEL, MODE_1_DATA_PIN>(Mode_Test_leds, MODE_1_NUM_LEDS);
+        break;
 
-    case ModeTest4:
-      FastLED.addLeds<NEOPIXEL, MODE_1_DATA_PIN>(Mode_Test_leds, MODE_1_NUM_LEDS);
-      break;
+      case ModeTest2:
+        FastLED.addLeds<NEOPIXEL, MODE_1_DATA_PIN>(Mode_Test_leds, MODE_1_NUM_LEDS);
+        break;
+
+      case ModeTest3:
+        FastLED.addLeds<NEOPIXEL, MODE_1_DATA_PIN>(Mode_Test_leds, MODE_1_NUM_LEDS);
+        break;
+
+      case ModeTest4:
+        FastLED.addLeds<NEOPIXEL, MODE_1_DATA_PIN>(Mode_Test_leds, MODE_1_NUM_LEDS);
+        break;
     }
   }
 
@@ -139,29 +139,29 @@ void loop() {
     case ModeOff:
       // nothing to do here
       break;
-      
+
     case ModeCustom:
       Mode_2_Loop();
       break;
-      
+
     case ModeExpert:
       // todo: call your code here
       break;
 
     case ModeTest1:
-      FastLED.showColor(CHSV(MODE_1_HUE_BOTH, MODE_1_SAT_BOTH, Mode_Test_getNewBrightness()));  
+      FastLED.showColor(CHSV(MODE_1_HUE_BOTH, MODE_1_SAT_BOTH, Mode_Test_getNewBrightness()));
       break;
 
     case ModeTest2:
-      FastLED.showColor(CHSV(MODE_1_HUE_BRIDE, MODE_1_SAT_BRIDE, Mode_Test_getNewBrightness())); 
+      FastLED.showColor(CHSV(MODE_1_HUE_BRIDE, MODE_1_SAT_BRIDE, Mode_Test_getNewBrightness()));
       break;
 
     case ModeTest3:
-      FastLED.showColor(CHSV(MODE_1_HUE_GROOM, MODE_1_SAT_GROOM, Mode_Test_getNewBrightness())); 
+      FastLED.showColor(CHSV(MODE_1_HUE_GROOM, MODE_1_SAT_GROOM, Mode_Test_getNewBrightness()));
       break;
 
     case ModeTest4:
-      FastLED.showColor(CHSV(Mode_Test_hue++, MODE_1_SAT_NONE, MODE_1_BRIGHTNESS_NONE)); 
+      FastLED.showColor(CHSV(Mode_Test_hue++, MODE_1_SAT_NONE, MODE_1_BRIGHTNESS_NONE));
       delay(20);
       break;
   }

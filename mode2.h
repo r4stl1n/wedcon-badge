@@ -12,8 +12,8 @@
 #define MODE_2_SCRIPT_FILE_NAME "./mode2-script.txt"
 
 struct ScriptLine {
-   short duration;
-   byte leds[18];
+  short duration;
+  byte leds[18];
 };
 
 
