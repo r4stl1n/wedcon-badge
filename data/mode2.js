@@ -121,6 +121,11 @@ function saveScript() {
             onClick: function() {} // Callback after click
         }).showToast();
     });
+}
 
+function updateDuration() {
+    var label = "Duration: " + document.getElementById('duration-slider').value + " Milliseconds";
+    document.getElementById('duration-label').innerHTML = label;
+    document.getElementById("duration").value = document.getElementById('duration-slider').value;
 
 }

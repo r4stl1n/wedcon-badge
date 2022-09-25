@@ -35,14 +35,13 @@
     .tab-locator:nth-of-type(3):checked ~ .tabs > .tab-content:nth-of-type(3) {
     display:block;
     }
-
     .led-layout {
-      width: 350px;
-      height: 350px;
-      background-image: url('TreeBadge.png');
-      background-size: contain;
-      align-content: center;
-      background-repeat: no-repeat;
+    width: 350px;
+    height: 350px;
+    background-image: url('TreeBadge.png');
+    background-size: contain;
+    align-content: center;
+    background-repeat: no-repeat;
     }
     </style>
     <link rel="stylesheet" href="toast.css">
@@ -83,106 +82,115 @@
                   <td width="40px">
                   </td>
                   <td width="50px">
-                    <input class="form-input" type="color" id="led3" name="led3" value="#e66465"></input>   
+                    <input class="form-input" type="color" id="led3" name="led3" value="#e66465"></input>
                   </td>
                   <td width="150px">
                   </td>
                   <td width="50px">
-                    <input class="form-input" type="color" id="led4" name="led4" value="#e66465"></input>   
+                    <input class="form-input" type="color" id="led4" name="led4" value="#e66465"></input>
                   </td>
                   <td width="40px">
                   </td>
                   <td width="50px">
-                  </col>
-                  <td width="10%">
-                  </td>
-                </tr>
-                <!-- row 2 -->
-                <tr>
-                  <td height="50px">
-                    &nbsp;
-                  </td>
-                </tr>
-                <!-- row 3 -->
-                <tr>
-                  <td height="50px">
-                  </td>
-                  <td>
-                    <input class="form-input" type="color" id="led2" name="led2" value="#e66465"></input>   
-                  </td>
-                  <td>
-                  </td>
-                  <td>
-                  </td>
-                  <td>
-                  </td>
-                  <td>
-                  </td>
-                  <td>
-                  </td>
-                  <td>
-                    <input class="form-input" type="color" id="led5" name="led5" value="#e66465"></input>   
-                  </col>
-                  <td>
-                  </td>
-                </tr>
-                <!-- row 4 -->
-                <tr>
-                  <td height="90px">
-                    &nbsp;
-                  </td>
-                </tr>
-                <!-- row 5 -->
-                <tr>
-                  <td height="50px">
-                  </td>
-                  <td>
-                  </td>
-                  <td>
-                  </td>
-                  <td>
-                    <input class="form-input" type="color" id="led1" name="led1" value="#e66465"></input>   
-                  </td>
-                  <td>
-                  </td>
-                  <td>
-                    <input class="form-input" type="color" id="led6" name="led6" value="#e66465"></input>   
-                  </td>
-                  <td>
-                  </col>
-                  <td>
-                  </td>
-                  <td>
-                  </td>
-                </tr>
-              </table>
+                    </col>
+                    <td width="10%">
+                    </td>
+                  </tr>
+                  <!-- row 2 -->
+                  <tr>
+                    <td height="50px">
+                      &nbsp;
+                    </td>
+                  </tr>
+                  <!-- row 3 -->
+                  <tr>
+                    <td height="50px">
+                    </td>
+                    <td>
+                      <input class="form-input" type="color" id="led2" name="led2" value="#e66465"></input>
+                    </td>
+                    <td>
+                    </td>
+                    <td>
+                    </td>
+                    <td>
+                    </td>
+                    <td>
+                    </td>
+                    <td>
+                    </td>
+                    <td>
+                      <input class="form-input" type="color" id="led5" name="led5" value="#e66465"></input>
+                      </col>
+                      <td>
+                      </td>
+                    </tr>
+                    <!-- row 4 -->
+                    <tr>
+                      <td height="90px">
+                        &nbsp;
+                      </td>
+                    </tr>
+                    <!-- row 5 -->
+                    <tr>
+                      <td height="50px">
+                      </td>
+                      <td>
+                      </td>
+                      <td>
+                      </td>
+                      <td>
+                        <input class="form-input" type="color" id="led1" name="led1" value="#e66465"></input>
+                      </td>
+                      <td>
+                      </td>
+                      <td>
+                        <input class="form-input" type="color" id="led6" name="led6" value="#e66465"></input>
+                      </td>
+                      <td>
+                        </col>
+                        <td>
+                        </td>
+                        <td>
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
+                </div>
+                
+                <label id="duration-label" name="duration-label" class="form-label" for="duration">Duration: 500 Milliseconds</label>
+                <div class="container">
+                  <div class="columns">
+                    <input class="slider column col-lg-auto col-6" type="range" min="100" max="5000" value="500" oninput=updateDuration() id="duration-slider" name="duration-slider">
+                    <div class="column col-3"></div>
+                    <input class="form-input column" type="number" id="duration" name="duration" value="500"></input>
+                  </div>
+                </div>
+                </br>
+                <button class="btn btn-lg btn-success" type="button" style="float: left;" onclick=saveScript()>Save</button>
+                <button class="btn btn-lg btn-primary" type="button" style="float: right;" onclick=addLedStep()>Add Step</button>
+                </br>
+                </br>
+              </div>
+              <div class="tab-content">
+                <div class="centerData">
+                  </br>
+                  <textarea class="form-input" id="ledscript" name="ledscript" rows="10" cols="50" style=box-sizing:border-box></textarea>
+                </div>
+                </br>
+                <button class="btn btn-lg btn-error" type="button" style="float: left;" onclick=resetScript()>Reset</button>
+                <button class="btn btn-lg btn-success" type="button" style="float: right;" onclick=saveScript()>Save</button>
+                </br>
+                </br>
+              </div>
+              
             </div>
+            
           </div>
-          </br>
-          <label class="form-label form-inline" for="duration">Duration:</label>
-          <input class="form-input form-inline" type="number" id="duration" name="duration" value="100"></input>          
-          </br>
-          <button class="btn btn-lg btn-success" type="button" style="float: left;" onclick=saveScript()>Save</button>
-          <button class="btn btn-lg btn-primary" type="button" style="float: right;" onclick=addLedStep()>Add Step</button>
-          </br>
-          </br>
-        </div>
-        
-        <div class="tab-content">
-          <div class="centerData">
-            </br>
-            <textarea class="form-input" id="ledscript" name="ledscript" rows="10" cols="50" style=box-sizing:border-box></textarea>
-          </div>
-          </br>
-          <button class="btn btn-lg btn-error" type="button" style="float: left;" onclick=resetScript()>Reset</button>
-          <button class="btn btn-lg btn-success" type="button" style="float: right;" onclick=saveScript()>Save</button>
-          </br>
-          </br>
         </div>
       </div>
-      
-      
     </div>
   </body>
   <script type="text/javascript" src="mode2.js"></script>
+  <script type="text/javascript">updateDuration();</script>
 </html>
