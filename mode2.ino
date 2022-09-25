@@ -10,14 +10,14 @@ static uint Mode_2_brightness = 0;
 static uint Mode_2_hue = 0;
 static ESP8266WebServer server(80);
 
-String header;
+struct ScriptLine Mode_2_Script[MODE_2_MAX_SCRIPT_SIZE];
 
-struct ScriptLine script[MODE_2_MAX_SCRIPT_SIZE];
+short Mode_2_ScriptLineCount = 0;
 
 void Mode_2_Init() {
 
   // Setup the FastLEDs
-  FastLED.addLeds<NEOPIXEL, MODE_1_DATA_PIN>(Mode_1_leds, MODE_1_NUM_LEDS);
+  FastLED.addLeds<NEOPIXEL, MODE_2_DATA_PIN>(Mode_2_leds, MODE_2_NUM_LEDS);
 
   // Setup the wifi access point
   // Server ip is 192.168.4.1
@@ -67,6 +67,7 @@ void Mode_2_Loop() {
 }
 
 void Mode_2_readFileToScript() {
+
   File scriptFile = SPIFFS.open("/mode2-script.txt", "r");
 
   if (!scriptFile) {
@@ -75,21 +76,45 @@ void Mode_2_readFileToScript() {
   }
 
   String data = "";
+
+  // Reset the script line count
+  Mode_2_ScriptLineCount = 0;
+
   while (scriptFile.available()) {
+
     char letter = scriptFile.read();
 
-    if (letter == "\n") {
+    if (letter == '\n') {
 
-      continue
+      Serial.println("Processing line: " + data);
+
+      // Create a temporary script structure
+      ScriptLine scriptLine;
+
+      // We found a new line so we need to process the data we already collected
+      // first lets split the data
+      sscanf(data.c_str(), "%hd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd", &scriptLine.duration,
+             &scriptLine.leds[0], &scriptLine.leds[1], &scriptLine.leds[2], &scriptLine.leds[3],
+             &scriptLine.leds[4], &scriptLine.leds[5], &scriptLine.leds[6], &scriptLine.leds[7],
+             &scriptLine.leds[8], &scriptLine.leds[9], &scriptLine.leds[10], &scriptLine.leds[11],
+             &scriptLine.leds[12], &scriptLine.leds[13], &scriptLine.leds[14], &scriptLine.leds[15],
+             &scriptLine.leds[16], &scriptLine.leds[17]);
+
+      data = "";
+
+      Mode_2_Script[Mode_2_ScriptLineCount] = scriptLine;
+      Mode_2_ScriptLineCount = Mode_2_ScriptLineCount + 1;
+
+      continue;
     }
 
     data = data += letter;
 
   }
 
-  Serial.println(data);
-
   scriptFile.close();
+
+  Serial.println("Script contains " + String(Mode_2_ScriptLineCount) + " command/s.");
 }
 
 void Mode_2_handleOnIndex() {
@@ -126,6 +151,8 @@ void Mode_2_handleOnSave() {
   }
 
   Serial.println("Script recorded to flash");
+
+  Mode_2_readFileToScript();
 }
 
 bool Mode_2_loadFromSpiffs(String path) {
@@ -135,6 +162,7 @@ bool Mode_2_loadFromSpiffs(String path) {
 
   if (path.endsWith(".src")) path = path.substring(0, path.lastIndexOf("."));
   else if (path.endsWith(".html")) dataType = "text/html";
+  else if (path.endsWith(".txt")) dataType = "text/plain";
   else if (path.endsWith(".htm")) dataType = "text/html";
   else if (path.endsWith(".css")) dataType = "text/css";
   else if (path.endsWith(".js")) dataType = "application/javascript";

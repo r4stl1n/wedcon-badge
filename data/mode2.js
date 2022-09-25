@@ -129,3 +129,11 @@ function updateDuration() {
     document.getElementById("duration").value = document.getElementById('duration-slider').value;
 
 }
+
+function loadScriptFromDisk() {
+    const url = "/mode2-script.txt";
+    fetch(url)
+        .then(r => r.text())
+        .then(t => document.getElementById('ledscript').value = t);
+
+}
