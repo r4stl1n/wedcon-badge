@@ -25,6 +25,11 @@ void Mode_2_Init() {
   Serial.println(MODE_2_WIFI_SSID);
   Serial.println(WiFi.softAP(MODE_2_WIFI_SSID, "", MODE_2_WIFI_CHANNEL, 10) ? "Ready" : "Failed!");
 
+  if (!SPIFFS.begin()) {
+      Serial.println("An Error has occurred while mounting SPIFFS");
+      return;
+  }
+
   SD.begin(D8);
 
   // Loading initial file state
@@ -46,6 +51,11 @@ void Mode_2_Init() {
 void Mode_2_Shutdown() {
   WiFi.scanDelete();
   WiFi.disconnect();
+
+  // Shutdown the web server
+  server.close();
+  // Shutdown the file system
+  SPIFFS.end();
 
   FastLED.showColor(CHSV(0, 0, 0)); 
   FastLED.clear();
@@ -76,8 +86,9 @@ void handleEachLine(char line[]) {
 }
 
 void Mode_2_handleOnIndex() {
+  Serial.println("Processing index request");
   server.sendHeader("Location", "/mode2.html",true);   //Redirect to our html web page
-  server.send(302, "text/plane","");
+  server.send(302, "text/plain","");
 }
 
 void Mode_2_handleOnSave() {
@@ -112,6 +123,7 @@ void Mode_2_handleOnSave() {
 
 bool Mode_2_loadFromSpiffs(String path){
   String dataType = "text/plain";
+  
   if(path.endsWith("/")) path += "index.htm";
 
   if(path.endsWith(".src")) path = path.substring(0, path.lastIndexOf("."));
@@ -126,9 +138,15 @@ bool Mode_2_loadFromSpiffs(String path){
   else if(path.endsWith(".xml")) dataType = "text/xml";
   else if(path.endsWith(".pdf")) dataType = "application/pdf";
   else if(path.endsWith(".zip")) dataType = "application/zip";
+  
   File dataFile = SPIFFS.open(path.c_str(), "r");
+  
   if (server.hasArg("download")) dataType = "application/octet-stream";
+  
   if (server.streamFile(dataFile, dataType) != dataFile.size()) {
+    Serial.println(path + " - " + "stream != dataFile size");
+    dataFile.close();
+    return false;
   }
 
   dataFile.close();
