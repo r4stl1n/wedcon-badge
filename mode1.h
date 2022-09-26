@@ -3,8 +3,9 @@
 
 // Wifi settings
 #define MODE_1_WIFI_CHANNEL         11
-#define MODE_1_WIFI_SSID_BRIDE      "20221111_madisonroyal__bride"
-#define MODE_1_WIFI_SSID_GROOM      "20221111_madisonroyal__groom"
+#define MODE_1_WIFI_SSID_PREFIX     "20221111_madisonroyal__"
+#define MODE_1_WIFI_SSID_BRIDE      (MODE_1_WIFI_SSID_PREFIX "bride")
+#define MODE_1_WIFI_SSID_GROOM      (MODE_1_WIFI_SSID_PREFIX "groom")
 #define MODE_1_WIFI_RSSI_HIGH       -50
 #define MODE_1_WIFI_RSSI_LOW        -60
 #define MODE_1_PROXIMITY_TIMEOUT    1000
@@ -38,6 +39,6 @@
 #define MODE_1_ALERT_COUNT      (MODE_1_ALERT_CYCLES * (MODE_1_BRIGHTNESS_HIGH - MODE_1_BRIGHTNESS_LOW) * 2)
 
 
-void Mode_1_Init();
+void Mode_1_Init(String name);
 void Mode_1_Loop();
 void Mode_1_Shutdown();

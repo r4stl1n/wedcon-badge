@@ -11,12 +11,13 @@
 #define MODE_2_MAX_SCRIPT_SIZE  128
 #define MODE_2_SCRIPT_FILE_NAME "/mode2-script.txt"
 
+
 struct ScriptLine {
   short duration;
   byte leds[17];
 };
 
 
-void Mode_2_Init();
+void Mode_2_Init(String name);
 void Mode_2_Loop();
 void Mode_2_Shutdown();

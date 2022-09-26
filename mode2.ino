@@ -20,7 +20,7 @@ short Mode_2_RunningLineCount = 0;
 short Mode_2_targetDuration = 0;
 elapsedMillis Mode_2_currentActionTimer = 0;
 
-void Mode_2_Init() {
+void Mode_2_Init(String name) {
 
   // Setup the FastLEDs
   FastLED.addLeds<NEOPIXEL, MODE_2_DATA_PIN>(Mode_2_leds, MODE_2_NUM_LEDS);
@@ -29,8 +29,10 @@ void Mode_2_Init() {
   // Server ip is 192.168.4.1
   Serial.print("Setting up wifi network: ");
   Serial.println(MODE_2_WIFI_SSID);
-  Serial.println(WiFi.softAP(MODE_2_WIFI_SSID, "", MODE_2_WIFI_CHANNEL, 10) ? "Ready" : "Failed!");
-
+  Serial.println(WiFi.softAP(MODE_2_WIFI_SSID) ? "Ready" : "Failed!");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.softAPIP());
+  
   if (!SPIFFS.begin()) {
     Serial.println("An Error has occurred while mounting SPIFFS");
     return;
@@ -98,7 +100,7 @@ void Mode_2_processScript() {
       Mode_2_RunningLineCount = Mode_2_RunningLineCount + 1;
     }
 
-    Serial.println("LED command duration updated to: " + String(Mode_2_targetDuration));
+//    Serial.println("LED command duration updated to: " + String(Mode_2_targetDuration));
 
   }
 
@@ -113,7 +115,7 @@ void Mode_2_resetLedLogic()  {
 
 void Mode_2_updateLeds(short scriptIndex) {
 
-  Serial.println("Updating leds for script index: " + String(scriptIndex));
+//  Serial.println("Updating leds for script index: " + String(scriptIndex));
 
   Mode_2_leds[0] = CHSV(Mode_2_Script[scriptIndex].leds[0], Mode_2_Script[scriptIndex].leds[1], Mode_2_Script[scriptIndex].leds[2]);
   Mode_2_leds[1] = CHSV(Mode_2_Script[scriptIndex].leds[3], Mode_2_Script[scriptIndex].leds[4], Mode_2_Script[scriptIndex].leds[5]);

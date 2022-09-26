@@ -21,7 +21,7 @@ static void Mode_1_evalRSSI();
 static unsigned long Mode_1_evalLastSeen(unsigned long lastSeen, int32_t maxRSSI);
 
 
-void Mode_1_Init() {
+void Mode_1_Init(String name) {
   FastLED.addLeds<NEOPIXEL, MODE_1_DATA_PIN>(Mode_1_leds, MODE_1_NUM_LEDS);
 
   WiFi.mode(WIFI_STA);
