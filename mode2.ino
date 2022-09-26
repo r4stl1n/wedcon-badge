@@ -1,5 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include <elapsedMillis.h>
 #include <FastLED.h>
 #include <SD.h>
 #include "mode2.h"
@@ -13,6 +14,11 @@ static ESP8266WebServer server(80);
 struct ScriptLine Mode_2_Script[MODE_2_MAX_SCRIPT_SIZE];
 
 short Mode_2_ScriptLineCount = 0;
+
+
+short Mode_2_RunningLineCount = 0;
+short Mode_2_targetDuration = 0;
+elapsedMillis Mode_2_currentActionTimer = 0;
 
 void Mode_2_Init() {
 
@@ -63,12 +69,67 @@ void Mode_2_Shutdown() {
 
 
 void Mode_2_Loop() {
+
   server.handleClient();
+
+  Mode_2_processScript();
+
+}
+
+void Mode_2_processScript() {
+
+  // Check if there is any script lines to process
+  // If there is not just return out
+  if (Mode_2_ScriptLineCount <= 0) {
+    return;
+  }
+
+  if ((Mode_2_currentActionTimer >= Mode_2_targetDuration) || Mode_2_targetDuration == 0) {
+
+    Mode_2_updateLeds(Mode_2_RunningLineCount);
+
+    Mode_2_targetDuration = Mode_2_Script[Mode_2_RunningLineCount].duration;
+    // Reset the action timer
+    Mode_2_currentActionTimer = 0;
+
+    if (Mode_2_ScriptLineCount - 1 == Mode_2_RunningLineCount) {
+      Mode_2_RunningLineCount = 0;
+    } else {
+      Mode_2_RunningLineCount = Mode_2_RunningLineCount + 1;
+    }
+
+    Serial.println("LED command duration updated to: " + String(Mode_2_targetDuration));
+
+  }
+
+}
+
+void Mode_2_resetLedLogic()  {
+  // Reset the action timer
+  Mode_2_currentActionTimer = 0;
+  Mode_2_RunningLineCount = 0;
+  Mode_2_targetDuration = 0;
+}
+
+void Mode_2_updateLeds(short scriptIndex) {
+
+  Serial.println("Updating leds for script index: " + String(scriptIndex));
+
+  Mode_2_leds[0] = CHSV(Mode_2_Script[scriptIndex].leds[0], Mode_2_Script[scriptIndex].leds[1], Mode_2_Script[scriptIndex].leds[2]);
+  Mode_2_leds[1] = CHSV(Mode_2_Script[scriptIndex].leds[3], Mode_2_Script[scriptIndex].leds[4], Mode_2_Script[scriptIndex].leds[5]);
+  Mode_2_leds[2] = CHSV(Mode_2_Script[scriptIndex].leds[6], Mode_2_Script[scriptIndex].leds[7], Mode_2_Script[scriptIndex].leds[8]);
+  Mode_2_leds[3] = CHSV(Mode_2_Script[scriptIndex].leds[9], Mode_2_Script[scriptIndex].leds[10], Mode_2_Script[scriptIndex].leds[11]);
+  Mode_2_leds[4] = CHSV(Mode_2_Script[scriptIndex].leds[12], Mode_2_Script[scriptIndex].leds[13], Mode_2_Script[scriptIndex].leds[14]);
+  Mode_2_leds[5] = CHSV(Mode_2_Script[scriptIndex].leds[15], Mode_2_Script[scriptIndex].leds[16], Mode_2_Script[scriptIndex].leds[17]);
+
+  FastLED.show();
 }
 
 void Mode_2_readFileToScript() {
 
-  File scriptFile = SPIFFS.open("/mode2-script.txt", "r");
+  Serial.println("Processing script file to disk");
+
+  File scriptFile = SPIFFS.open(MODE_2_SCRIPT_FILE_NAME, "r");
 
   if (!scriptFile) {
     Serial.println("No script file currently exist");
@@ -115,6 +176,8 @@ void Mode_2_readFileToScript() {
   scriptFile.close();
 
   Serial.println("Script contains " + String(Mode_2_ScriptLineCount) + " command/s.");
+
+  Mode_2_resetLedLogic();
 }
 
 void Mode_2_handleOnIndex() {
@@ -130,7 +193,7 @@ void Mode_2_handleOnSave() {
     return;
   }
 
-  File file = SPIFFS.open("/mode2-script.txt", "w");
+  File file = SPIFFS.open(MODE_2_SCRIPT_FILE_NAME, "w");
 
   if (!file) {
     Serial.println("Error opening file for writing");

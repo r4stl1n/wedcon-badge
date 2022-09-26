@@ -9,7 +9,7 @@
 #define MODE_2_BRIGHTNESS_LOW   20
 #define MODE_2_BRIGHTNESS_HIGH  (MODE_1_BRIGHTNESS_LOW + 64)
 #define MODE_2_MAX_SCRIPT_SIZE  128
-#define MODE_2_SCRIPT_FILE_NAME "./mode2-script.txt"
+#define MODE_2_SCRIPT_FILE_NAME "/mode2-script.txt"
 
 struct ScriptLine {
   short duration;
