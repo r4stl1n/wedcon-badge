@@ -10,16 +10,16 @@
 
 enum Modes {
   ModeProximity = 0,
-  ModeOff,
   ModeCustom,
-  ModeExpert,
+  ModeOff,
   ModeFlash,
 
-  ModeMax = ModeExpert
+  ModeMax = ModeOff // cycle through to ModeOff (not ModeFlash) 
 };
 
 static Bounce button = Bounce();
 static uint mode = 0;
+static bool skipRise = false;
 
 static void blink(uint num);
 static String getName();
@@ -44,17 +44,32 @@ void loop() {
   button.update();
 
   uint oldMode = mode;
-	if (mode != ModeFlash && button.fell()) {
-    mode = (mode + 1) % (ModeMax + 1);
-    blink(mode);
+  if (oldMode != ModeFlash && !button.read() && button.currentDuration() >= 5000) {
+    switch (oldMode) {
+      case ModeProximity:
+        // 5 sec push&hold does nothing here
+        break;
+        
+      case ModeCustom:
+        Mode_2_EnableUpdate();
+        break;
+        
+      case ModeOff:
+        mode = ModeFlash;
+        Serial.printf("*** entering flash mode ***\n");
+        break;
+    }
 
-    Serial.printf("Now in mode: %d\n", mode + 1);
-  }
+    skipRise = true;
+  } else if (oldMode != ModeFlash && button.rose()) {
+    if (!skipRise) {
+      mode = (mode + 1) % (ModeMax + 1);
+      blink(mode);
+  
+      Serial.printf("Now in mode: %d\n", mode + 1);
+    }
 
-  if (mode != ModeFlash && !button.read() && button.currentDuration() >= 5000) {
-    mode = ModeFlash;
-
-    Serial.printf("*** entering flash mode ***\n");
+    skipRise = false;
   }
 
   if (oldMode != mode) {
@@ -63,18 +78,14 @@ void loop() {
         Mode_1_Shutdown();
         break;
 
-      case ModeOff:
-        // nothing to do here
-        break;
-        
       case ModeCustom:
         Mode_2_Shutdown();
         break;
         
-      case ModeExpert:
-        // todo: call your code here
+      case ModeOff:
+        // nothing to do here
         break;
-
+        
       case ModeFlash:
         Mode_Flash_Shutdown();
         break;
@@ -85,16 +96,12 @@ void loop() {
         Mode_1_Init(getName());
         break;
 
-      case ModeOff:
-        // nothing to do here
-        break;
-
       case ModeCustom:
         Mode_2_Init(getName());
         break;
 
-      case ModeExpert:
-        // todo: call your code here
+      case ModeOff:
+        // nothing to do here
         break;
 
       case ModeFlash:
@@ -110,16 +117,12 @@ void loop() {
       Mode_1_Loop();
       break;
 
-    case ModeOff:
-      // nothing to do here
-      break;
-
     case ModeCustom:
       Mode_2_Loop();
       break;
 
-    case ModeExpert:
-      // todo: call your code here
+    case ModeOff:
+      // nothing to do here
       break;
 
     case ModeFlash:

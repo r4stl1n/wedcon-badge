@@ -13,6 +13,8 @@ static short Mode_2_scriptLineCount = 0;
 static short Mode_2_scriptLineIndex = 0;
 static short Mode_2_targetDuration = 0;
 static elapsedMillis Mode_2_currentActionTimer = 0;
+static bool Mode_2_updateEnabled = false;
+static String Mode_2_SSID;
 
 static void Mode_2_runScript();
 static void Mode_2_updateLEDs(short scriptIndex);
@@ -23,15 +25,13 @@ static void Mode_2_handleNotFound();
 static bool Mode_2_loadFromSpiffs(String path);
 
 
-void Mode_2_Init(String name, bool safe) {
+void Mode_2_Init(String name) {
+  Mode_2_SSID = name;
+  Mode_2_updateEnabled = false;
+  
   FastLED.addLeds<NEOPIXEL, MODE_2_DATA_PIN>(Mode_2_leds, MODE_2_NUM_LEDS);
   FastLED.showColor(CHSV(0, 0, 0));
 
-  // Setup the wifi access point
-  // Server ip should be 192.168.4.1
-  Serial.printf("Setting up wifi network: %s - %s\n", name.c_str(), WiFi.softAP(name) ? "Ready" : "Failed!");
-  Serial.printf("IP address: %d.%d.%d.%d\n", WiFi.softAPIP()[0], WiFi.softAPIP()[1], WiFi.softAPIP()[2], WiFi.softAPIP()[3]);
-  
   if (!SPIFFS.begin()) {
     Serial.println("An Error has occurred while mounting SPIFFS");
     return;
@@ -40,11 +40,6 @@ void Mode_2_Init(String name, bool safe) {
   SD.begin(D8);
 
   Mode_2_parseScript();
-
-  Mode_2_webserver.begin();
-  Mode_2_webserver.on("/", HTTP_GET, Mode_2_handleOnIndex);
-  Mode_2_webserver.on("/save", HTTP_POST, Mode_2_handleOnSave);
-  Mode_2_webserver.onNotFound(Mode_2_handleNotFound);
 }
 
 
@@ -65,6 +60,28 @@ void Mode_2_Shutdown() {
 void Mode_2_Loop() {
   Mode_2_webserver.handleClient();
   Mode_2_runScript();
+}
+
+
+void Mode_2_EnableUpdate() {
+  if(Mode_2_updateEnabled) {
+    return;
+  }
+  
+  Mode_2_updateEnabled = true;
+  
+  // Setup the wifi access point
+  // Server ip should be 192.168.4.1
+//  Serial.printf("Setting up wifi network: %s - %s\n", Mode_2_SSID.c_str(), WiFi.softAP(Mode_2_SSID) ? "Ready" : "Failed!");
+  bool ok = WiFi.softAP(Mode_2_SSID);
+  Serial.printf(">>>>>>>>>>> new code here \n");
+  Serial.printf("Setting up wifi network: %s - %s\n", Mode_2_SSID.c_str(), ok ? "Ready" : "Failed!");
+  Serial.printf("IP address: %d.%d.%d.%d\n", WiFi.softAPIP()[0], WiFi.softAPIP()[1], WiFi.softAPIP()[2], WiFi.softAPIP()[3]);
+  
+  Mode_2_webserver.begin();
+  Mode_2_webserver.on("/", HTTP_GET, Mode_2_handleOnIndex);
+  Mode_2_webserver.on("/save", HTTP_POST, Mode_2_handleOnSave);
+  Mode_2_webserver.onNotFound(Mode_2_handleNotFound);
 }
 
 

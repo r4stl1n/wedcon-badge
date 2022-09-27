@@ -15,6 +15,7 @@ struct ScriptLine {
 };
 
 
-void Mode_2_Init(String name, bool safe = false);
+void Mode_2_Init(String name);
 void Mode_2_Loop();
 void Mode_2_Shutdown();
+void Mode_2_EnableUpdate();

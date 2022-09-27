@@ -3,7 +3,7 @@
 
 // Wifi settings
 #define MODE_1_WIFI_CHANNEL         11
-#define MODE_1_WIFI_SSID_PREFIX     "20221111_madisonroyal__"
+#define MODE_1_WIFI_SSID_PREFIX     "2022_11_11_madison+royal_"
 #define MODE_1_WIFI_SSID_BRIDE      (MODE_1_WIFI_SSID_PREFIX "bride")
 #define MODE_1_WIFI_SSID_GROOM      (MODE_1_WIFI_SSID_PREFIX "groom")
 #define MODE_1_WIFI_RSSI_HIGH       -50
