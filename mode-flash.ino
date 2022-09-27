@@ -7,6 +7,7 @@
 
 static void Mode_Flash_alert();
 
+
 void Mode_Flash_Init(String name) {
   Mode_Flash_alert();
 

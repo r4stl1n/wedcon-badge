@@ -7,31 +7,30 @@
 
 
 static CRGB Mode_2_leds[MODE_2_NUM_LEDS];
-static uint Mode_2_brightness = 0;
-static uint Mode_2_hue = 0;
-static ESP8266WebServer server(80);
+static ESP8266WebServer Mode_2_webserver(80);
+static struct ScriptLine Mode_2_Script[MODE_2_MAX_SCRIPT_SIZE];
+static short Mode_2_scriptLineCount = 0;
+static short Mode_2_scriptLineIndex = 0;
+static short Mode_2_targetDuration = 0;
+static elapsedMillis Mode_2_currentActionTimer = 0;
 
-struct ScriptLine Mode_2_Script[MODE_2_MAX_SCRIPT_SIZE];
+static void Mode_2_runScript();
+static void Mode_2_updateLEDs(short scriptIndex);
+static void Mode_2_parseScript();
+static void Mode_2_handleOnIndex();
+static void Mode_2_handleOnSave();
+static void Mode_2_handleNotFound();
+static bool Mode_2_loadFromSpiffs(String path);
 
-short Mode_2_ScriptLineCount = 0;
 
-
-short Mode_2_RunningLineCount = 0;
-short Mode_2_targetDuration = 0;
-elapsedMillis Mode_2_currentActionTimer = 0;
-
-void Mode_2_Init(String name) {
-
-  // Setup the FastLEDs
+void Mode_2_Init(String name, bool safe) {
   FastLED.addLeds<NEOPIXEL, MODE_2_DATA_PIN>(Mode_2_leds, MODE_2_NUM_LEDS);
+  FastLED.showColor(CHSV(0, 0, 0));
 
   // Setup the wifi access point
-  // Server ip is 192.168.4.1
-  Serial.print("Setting up wifi network: ");
-  Serial.println(MODE_2_WIFI_SSID);
-  Serial.println(WiFi.softAP(MODE_2_WIFI_SSID) ? "Ready" : "Failed!");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.softAPIP());
+  // Server ip should be 192.168.4.1
+  Serial.printf("Setting up wifi network: %s - %s\n", name.c_str(), WiFi.softAP(name) ? "Ready" : "Failed!");
+  Serial.printf("IP address: %d.%d.%d.%d\n", WiFi.softAPIP()[0], WiFi.softAPIP()[1], WiFi.softAPIP()[2], WiFi.softAPIP()[3]);
   
   if (!SPIFFS.begin()) {
     Serial.println("An Error has occurred while mounting SPIFFS");
@@ -40,30 +39,23 @@ void Mode_2_Init(String name) {
 
   SD.begin(D8);
 
-  // Loading initial file state
-  Serial.println("Loading initial file state");
-  Mode_2_readFileToScript();
+  Mode_2_parseScript();
 
-  // Start the esp8266 webserver
-  server.begin();
-
-  // Create the page handlers
-  server.on("/", HTTP_GET, Mode_2_handleOnIndex);
-  server.on("/save", HTTP_POST, Mode_2_handleOnSave);
-
-  server.onNotFound(Mode_2_handleNotFound);
-
+  Mode_2_webserver.begin();
+  Mode_2_webserver.on("/", HTTP_GET, Mode_2_handleOnIndex);
+  Mode_2_webserver.on("/save", HTTP_POST, Mode_2_handleOnSave);
+  Mode_2_webserver.onNotFound(Mode_2_handleNotFound);
 }
 
 
 void Mode_2_Shutdown() {
-  WiFi.scanDelete();
-  WiFi.disconnect();
+  Mode_2_webserver.close();
 
-  // Shutdown the web server
-  server.close();
-  // Shutdown the file system
+  SD.end();
+
   SPIFFS.end();
+
+  WiFi.disconnect();
 
   FastLED.showColor(CHSV(0, 0, 0));
   FastLED.clear();
@@ -71,52 +63,33 @@ void Mode_2_Shutdown() {
 
 
 void Mode_2_Loop() {
-
-  server.handleClient();
-
-  Mode_2_processScript();
-
+  Mode_2_webserver.handleClient();
+  Mode_2_runScript();
 }
 
-void Mode_2_processScript() {
 
-  // Check if there is any script lines to process
-  // If there is not just return out
-  if (Mode_2_ScriptLineCount <= 0) {
+void Mode_2_runScript() {
+  if (Mode_2_scriptLineCount <= 0) {
     return;
   }
 
-  if ((Mode_2_currentActionTimer >= Mode_2_targetDuration) || Mode_2_targetDuration == 0) {
-
-    Mode_2_updateLeds(Mode_2_RunningLineCount);
-
-    Mode_2_targetDuration = Mode_2_Script[Mode_2_RunningLineCount].duration;
-    // Reset the action timer
-    Mode_2_currentActionTimer = 0;
-
-    if (Mode_2_ScriptLineCount - 1 == Mode_2_RunningLineCount) {
-      Mode_2_RunningLineCount = 0;
-    } else {
-      Mode_2_RunningLineCount = Mode_2_RunningLineCount + 1;
-    }
-
-//    Serial.println("LED command duration updated to: " + String(Mode_2_targetDuration));
-
+  if ((Mode_2_targetDuration > 0) && (Mode_2_currentActionTimer < Mode_2_targetDuration)) {
+    return;
   }
 
-}
-
-void Mode_2_resetLedLogic()  {
-  // Reset the action timer
+  Serial.printf("showing line %d\n", Mode_2_scriptLineIndex + 1);
+  
   Mode_2_currentActionTimer = 0;
-  Mode_2_RunningLineCount = 0;
-  Mode_2_targetDuration = 0;
+  Mode_2_targetDuration = Mode_2_Script[Mode_2_scriptLineIndex].duration;
+  
+  Mode_2_updateLEDs(Mode_2_scriptLineIndex);
+
+  Mode_2_scriptLineIndex++;
+  Mode_2_scriptLineIndex %= Mode_2_scriptLineCount;
 }
 
-void Mode_2_updateLeds(short scriptIndex) {
 
-//  Serial.println("Updating leds for script index: " + String(scriptIndex));
-
+void Mode_2_updateLEDs(short scriptIndex) {
   Mode_2_leds[0] = CHSV(Mode_2_Script[scriptIndex].leds[0], Mode_2_Script[scriptIndex].leds[1], Mode_2_Script[scriptIndex].leds[2]);
   Mode_2_leds[1] = CHSV(Mode_2_Script[scriptIndex].leds[3], Mode_2_Script[scriptIndex].leds[4], Mode_2_Script[scriptIndex].leds[5]);
   Mode_2_leds[2] = CHSV(Mode_2_Script[scriptIndex].leds[6], Mode_2_Script[scriptIndex].leds[7], Mode_2_Script[scriptIndex].leds[8]);
@@ -125,147 +98,159 @@ void Mode_2_updateLeds(short scriptIndex) {
   Mode_2_leds[5] = CHSV(Mode_2_Script[scriptIndex].leds[15], Mode_2_Script[scriptIndex].leds[16], Mode_2_Script[scriptIndex].leds[17]);
 
   FastLED.show();
+  delay(1);
 }
 
-void Mode_2_readFileToScript() {
 
+void Mode_2_parseScript() {
   Serial.println("Processing script file to disk");
 
   File scriptFile = SPIFFS.open(MODE_2_SCRIPT_FILE_NAME, "r");
-
   if (!scriptFile) {
     Serial.println("No script file currently exist");
     return;
   }
 
+  Mode_2_scriptLineCount = 0;
   String data = "";
+  while (scriptFile.available() && Mode_2_scriptLineCount < MODE_2_MAX_SCRIPT_SIZE) {
+    char c = scriptFile.read();
 
-  // Reset the script line count
-  Mode_2_ScriptLineCount = 0;
-
-  while (scriptFile.available()) {
-
-    char letter = scriptFile.read();
-
-    if (letter == '\n') {
-
-      Serial.println("Processing line: " + data);
-
-      // Create a temporary script structure
-      ScriptLine scriptLine;
-
-      // We found a new line so we need to process the data we already collected
-      // first lets split the data
-      sscanf(data.c_str(), "%hd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd", &scriptLine.duration,
-             &scriptLine.leds[0], &scriptLine.leds[1], &scriptLine.leds[2], &scriptLine.leds[3],
-             &scriptLine.leds[4], &scriptLine.leds[5], &scriptLine.leds[6], &scriptLine.leds[7],
-             &scriptLine.leds[8], &scriptLine.leds[9], &scriptLine.leds[10], &scriptLine.leds[11],
-             &scriptLine.leds[12], &scriptLine.leds[13], &scriptLine.leds[14], &scriptLine.leds[15],
-             &scriptLine.leds[16], &scriptLine.leds[17]);
-
-      data = "";
-
-      Mode_2_Script[Mode_2_ScriptLineCount] = scriptLine;
-      Mode_2_ScriptLineCount = Mode_2_ScriptLineCount + 1;
-
+    if (c != '\n') {
+      data += c;
       continue;
     }
 
-    data = data += letter;
+    Mode_2_scriptLineCount++;
+    Serial.printf("Processing line %d: %s\n", Mode_2_scriptLineCount, data.c_str());
 
+    ScriptLine scriptLine;
+    sscanf(data.c_str(), "%hd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd", 
+           &scriptLine.duration,
+           &scriptLine.leds[0], &scriptLine.leds[1], &scriptLine.leds[2], 
+           &scriptLine.leds[3], &scriptLine.leds[4], &scriptLine.leds[5], 
+           &scriptLine.leds[6], &scriptLine.leds[7], &scriptLine.leds[8], 
+           &scriptLine.leds[9], &scriptLine.leds[10], &scriptLine.leds[11], 
+           &scriptLine.leds[12], &scriptLine.leds[13], &scriptLine.leds[14], 
+           &scriptLine.leds[15], &scriptLine.leds[16], &scriptLine.leds[17]);
+
+    Mode_2_Script[Mode_2_scriptLineCount - 1] = scriptLine;
+
+    data = "";
   }
 
   scriptFile.close();
 
-  Serial.println("Script contains " + String(Mode_2_ScriptLineCount) + " command/s.");
+  Serial.printf("Script contains %d lines\n", Mode_2_scriptLineCount);
 
-  Mode_2_resetLedLogic();
+  Mode_2_currentActionTimer = 0;
+  Mode_2_scriptLineIndex = 0;
+  Mode_2_targetDuration = 0;
 }
+
 
 void Mode_2_handleOnIndex() {
   Serial.println("Processing index request");
-  server.sendHeader("Location", "/mode2.html", true);  //Redirect to our html web page
-  server.send(302, "text/plain", "");
+  Mode_2_webserver.sendHeader("Location", "/mode2.html", true);  //Redirect to our html web page
+  Mode_2_webserver.send(302, "text/plain", "");
 }
 
-void Mode_2_handleOnSave() {
 
-  if ( ! server.hasArg("script")) {
-    server.send(400, "text/plain", "400: Invalid Request");
+void Mode_2_handleOnSave() {
+  if ( ! Mode_2_webserver.hasArg("script")) {
+    Mode_2_webserver.send(400, "text/plain", "400: Invalid Request");
     return;
   }
 
   File file = SPIFFS.open(MODE_2_SCRIPT_FILE_NAME, "w");
-
   if (!file) {
+    Mode_2_webserver.send(500, "text/plain", "500: Internal Error");
     Serial.println("Error opening file for writing");
     return;
   }
 
-  Serial.println(server.arg("script"));
+  String script = Mode_2_webserver.arg("script");
+  
+  Serial.printf("Got script (%d bytes):\n%s\n", script.length(), script.c_str());
 
-  int bytesWritten = file.print(server.arg("script"));
-
-  Serial.println(bytesWritten);
-
+  int bytesWritten = file.print(script);
   file.close();
 
   if (bytesWritten < 0) {
-    Serial.println("Failed to write script to flash");
+    Serial.printf("Failed to write script to flash. Wrote %d of %d bytes\n", bytesWritten, script.length());
     return;
   }
 
   Serial.println("Script recorded to flash");
 
-  Mode_2_readFileToScript();
+  Mode_2_parseScript();
 }
 
+
+void Mode_2_handleNotFound() {
+  if (Mode_2_loadFromSpiffs(Mode_2_webserver.uri())) {
+    return;
+  }
+  
+  String message = "File Not Detected\n\n";
+  message += "URI: " + Mode_2_webserver.uri() + "\n";
+  message += "Method: " + String((Mode_2_webserver.method() == HTTP_GET) ? "GET" : "POST") + "\n";
+  message += String(Mode_2_webserver.args()) + " arguments: \n";
+  for (uint8_t i = 0; i < Mode_2_webserver.args(); i++) {
+    message += "  " + Mode_2_webserver.argName(i) + "='" + Mode_2_webserver.arg(i) + "'\n";
+  }
+  
+  Mode_2_webserver.send(404, "text/plain", message);
+
+  Serial.printf("File not found: '%s'\n", Mode_2_webserver.uri().c_str());
+}
+
+
 bool Mode_2_loadFromSpiffs(String path) {
+  if (path.endsWith("/")) {
+    path += "index.htm";
+  }
+
   String dataType = "text/plain";
-
-  if (path.endsWith("/")) path += "index.htm";
-
-  if (path.endsWith(".src")) path = path.substring(0, path.lastIndexOf("."));
-  else if (path.endsWith(".html")) dataType = "text/html";
-  else if (path.endsWith(".txt")) dataType = "text/plain";
-  else if (path.endsWith(".htm")) dataType = "text/html";
-  else if (path.endsWith(".css")) dataType = "text/css";
-  else if (path.endsWith(".js")) dataType = "application/javascript";
-  else if (path.endsWith(".png")) dataType = "image/png";
-  else if (path.endsWith(".gif")) dataType = "image/gif";
-  else if (path.endsWith(".jpg")) dataType = "image/jpeg";
-  else if (path.endsWith(".ico")) dataType = "image/x-icon";
-  else if (path.endsWith(".xml")) dataType = "text/xml";
-  else if (path.endsWith(".pdf")) dataType = "application/pdf";
-  else if (path.endsWith(".zip")) dataType = "application/zip";
+  if (Mode_2_webserver.hasArg("download")) {
+    dataType = "application/octet-stream";
+  } else if (path.endsWith(".src")) {
+    path = path.substring(0, path.lastIndexOf("."));
+  } else if (path.endsWith(".html")) {
+    dataType = "text/html";
+  } else if (path.endsWith(".txt")) {
+    dataType = "text/plain";
+  } else if (path.endsWith(".htm")) {
+    dataType = "text/html";
+  } else if (path.endsWith(".css")) {
+    dataType = "text/css";
+  } else if (path.endsWith(".js")) {
+    dataType = "application/javascript";
+  } else if (path.endsWith(".png")) {
+    dataType = "image/png";
+  } else if (path.endsWith(".gif")) {
+    dataType = "image/gif";
+  } else if (path.endsWith(".jpg")) {
+    dataType = "image/jpeg";
+  } else if (path.endsWith(".ico")) {
+    dataType = "image/x-icon";
+  } else if (path.endsWith(".xml")) {
+    dataType = "text/xml";
+  } else if (path.endsWith(".pdf")) {
+    dataType = "application/pdf";
+  } else if (path.endsWith(".zip")) {
+    dataType = "application/zip";
+  }
 
   File dataFile = SPIFFS.open(path.c_str(), "r");
-
-  if (server.hasArg("download")) dataType = "application/octet-stream";
-
-  if (server.streamFile(dataFile, dataType) != dataFile.size()) {
-    Serial.println(path + " - " + "stream != dataFile size");
-    dataFile.close();
+  unsigned long have = dataFile.size();
+  unsigned long sent = Mode_2_webserver.streamFile(dataFile, dataType);
+  dataFile.close();
+  
+  if (sent != have) {
+    Serial.printf("Failed to stream %s. Sent %d of %d bytes\n", path.c_str(), sent, have);
     return false;
   }
 
-  dataFile.close();
   return true;
-}
-
-void Mode_2_handleNotFound() {
-  if (Mode_2_loadFromSpiffs(server.uri())) return;
-  String message = "File Not Detected\n\n";
-  message += "URI: ";
-  message += server.uri();
-  message += "\nMethod: ";
-  message += (server.method() == HTTP_GET) ? "GET" : "POST";
-  message += "\nArguments: ";
-  message += server.args();
-  message += "\n";
-  for (uint8_t i = 0; i < server.args(); i++) {
-    message += " NAME:" + server.argName(i) + "\n VALUE:" + server.arg(i) + "\n";
-  }
-  server.send(404, "text/plain", message);
-  Serial.println(message);
 }
