@@ -70,6 +70,7 @@ void Mode_2_Loop() {
 
 void Mode_2_runScript() {
   if (Mode_2_scriptLineCount <= 0) {
+    delay(10);
     return;
   }
 
@@ -103,6 +104,8 @@ void Mode_2_updateLEDs(short scriptIndex) {
 
 
 void Mode_2_parseScript() {
+  FastLED.showColor(CHSV(0, 0, 0));
+  
   Serial.println("Processing script file to disk");
 
   File scriptFile = SPIFFS.open(MODE_2_SCRIPT_FILE_NAME, "r");
@@ -121,24 +124,12 @@ void Mode_2_parseScript() {
       continue;
     }
 
-    Mode_2_scriptLineCount++;
-    Serial.printf("Processing line %d: %s\n", Mode_2_scriptLineCount, data.c_str());
-
-    ScriptLine scriptLine;
-    sscanf(data.c_str(), "%hd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd", 
-           &scriptLine.duration,
-           &scriptLine.leds[0], &scriptLine.leds[1], &scriptLine.leds[2], 
-           &scriptLine.leds[3], &scriptLine.leds[4], &scriptLine.leds[5], 
-           &scriptLine.leds[6], &scriptLine.leds[7], &scriptLine.leds[8], 
-           &scriptLine.leds[9], &scriptLine.leds[10], &scriptLine.leds[11], 
-           &scriptLine.leds[12], &scriptLine.leds[13], &scriptLine.leds[14], 
-           &scriptLine.leds[15], &scriptLine.leds[16], &scriptLine.leds[17]);
-
-    Mode_2_Script[Mode_2_scriptLineCount - 1] = scriptLine;
-
+    Mode_2_parseLine(data);
+    
     data = "";
   }
 
+  Mode_2_parseLine(data);
   scriptFile.close();
 
   Serial.printf("Script contains %d lines\n", Mode_2_scriptLineCount);
@@ -146,6 +137,28 @@ void Mode_2_parseScript() {
   Mode_2_currentActionTimer = 0;
   Mode_2_scriptLineIndex = 0;
   Mode_2_targetDuration = 0;
+}
+
+
+void Mode_2_parseLine(String line) {
+    Serial.printf("Processing line %d: %s\n", Mode_2_scriptLineCount + 1, line.c_str());
+
+    ScriptLine scriptLine;
+    int match = sscanf(line.c_str(), "%hd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd %hhd", 
+                       &scriptLine.duration,
+                       &scriptLine.leds[0], &scriptLine.leds[1], &scriptLine.leds[2], 
+                       &scriptLine.leds[3], &scriptLine.leds[4], &scriptLine.leds[5], 
+                       &scriptLine.leds[6], &scriptLine.leds[7], &scriptLine.leds[8], 
+                       &scriptLine.leds[9], &scriptLine.leds[10], &scriptLine.leds[11], 
+                       &scriptLine.leds[12], &scriptLine.leds[13], &scriptLine.leds[14], 
+                       &scriptLine.leds[15], &scriptLine.leds[16], &scriptLine.leds[17]);
+
+    if (match != 19) {
+      return;
+    }
+
+    Mode_2_Script[Mode_2_scriptLineCount] = scriptLine;
+    Mode_2_scriptLineCount++;
 }
 
 
