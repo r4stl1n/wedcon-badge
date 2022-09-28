@@ -1,3 +1,6 @@
+var runSimulation = false;
+var currentSimulationLine = 0;
+
 function getScriptStepLength() {
     var text = document.getElementById('ledscript').value;
     var lines = text.split("\n");
@@ -136,4 +139,80 @@ function loadScriptFromDisk() {
         .then(r => r.text())
         .then(t => document.getElementById('ledscript').value = t);
 
+}
+
+function handleNextSimulationStep() {
+
+    if (runSimulation == false) {
+        return;
+    }
+
+    var text = document.getElementById('ledscript').value;
+    var lines = text.split("\n");
+    var elements = lines[currentLine].split(" ")
+
+
+    console.log(elements);
+
+}
+
+function simulateScript() {
+
+    runSimulation = true
+
+    var text = document.getElementById('ledscript').value;
+    var lines = text.split("\n");
+
+    var count = 1;
+    for (const line of lines) {
+
+        if (line == "") continue;
+
+        count = count + 1;
+        if (line.split(" ").length != 19) {
+
+            Toastify({
+                text: "Error on line: " + count,
+                duration: 1000,
+                destination: "https://github.com/apvarun/toastify-js",
+                newWindow: false,
+                close: true,
+                gravity: "top", // `top` or `bottom`
+                position: "right", // `left`, `center` or `right`
+                stopOnFocus: true, // Prevents dismissing of toast on hover
+                style: {
+                    background: "#e85600",
+                },
+                onClick: function() {} // Callback after click
+            }).showToast();
+
+            return
+        }
+    }
+
+
+    var start = new Date().getTime();
+    var currentLine = 0;
+
+    while (runSimulation) {
+
+        if (lines == 0) {
+            runSimulation = false;
+        }
+
+        var elapsed = new Date().getTime() - start;
+        var elements = lines[currentLine].split(" ")
+
+        if (elapsed >= parseInt(elements[0])) {
+
+            console.log(elements);
+            currentLine = currentLine + 1;
+            start = new Date().getTime();
+        }
+
+        if (currentLine >= lines.length-1) {
+            currentLine = 0;
+        }
+
+    }
 }
