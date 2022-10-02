@@ -1,56 +1,48 @@
 #include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
 #include <FastLED.h>
+
+#define NO_GLOBAL_ARDUINOOTA
 #include <ArduinoOTA.h>
-#include "mode1.h"
+
 #include "mode-flash.h"
+#include "wifi-scan.h"
 
 
-static void Mode_Flash_alert();
+static ArduinoOTAClass* Mode_Flash_arduinoOTA = NULL;
+
+static void ota_error(short id) { Serial.printf("ota error %d\n", id); }
 
 
-void Mode_Flash_Init(String name) {
-  Mode_Flash_alert();
+void Mode_Flash_Init() {
+  LED_ChangePattern(LEDOff);
 
-  WiFi.mode(WIFI_AP);
+  String name = Wifi_GetName();
   WiFi.softAP(name);
+  delay(100);
 
-  ArduinoOTA.begin();
+  Mode_Flash_arduinoOTA = new(ArduinoOTAClass);
+  Mode_Flash_arduinoOTA->onError(ota_error);
+  Mode_Flash_arduinoOTA->begin();
   
   Serial.printf("Ready. To flash the badge, join WiFi network %s\n", name.c_str());
 
   delay(100);
-}
 
-
-void Mode_Flash_Shutdown() {
-  WiFi.disconnect();
+  LED_Flash(3);
 }
 
 
 void Mode_Flash_Loop() {
-  ArduinoOTA.handle();
+  Mode_Flash_arduinoOTA->handle();
 }
 
 
-void Mode_Flash_alert() {
-  static CRGB leds[MODE_1_NUM_LEDS];
+void Mode_Flash_Shutdown() {
+  delete Mode_Flash_arduinoOTA;
+  Mode_Flash_arduinoOTA = NULL;
 
-  FastLED.addLeds<NEOPIXEL, MODE_1_DATA_PIN>(leds, MODE_1_NUM_LEDS);
+  WiFi.softAPdisconnect(true);
 
-  FastLED.showColor(CHSV(0, 0, 0));
-  delay(300);
-  FastLED.showColor(CHSV(0, 0, 255));
-  delay(10);
-  FastLED.showColor(CHSV(0, 0, 0));
-  delay(300);
-  FastLED.showColor(CHSV(0, 0, 255));
-  delay(10);
-  FastLED.showColor(CHSV(0, 0, 0));
-  delay(300);
-  FastLED.showColor(CHSV(0, 0, 255));
-  delay(10);
-  FastLED.showColor(CHSV(0, 0, 0));
-
-  FastLED.showColor(CHSV(0, 0, 0));
-  FastLED.clear();
+  LED_Flash(3);
 }

@@ -58,6 +58,7 @@ To modify the firmware that came with your badge, clone the following repository
 You need to add these libraries needed to build this firmware:
 * ArduinoOTA
 * Bounce2
+* Crypto
 * elapsedMillis
 * ESP8266WebServer
 * ESP8266WiFi

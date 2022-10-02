@@ -1,153 +1,172 @@
-#include <Bounce2.h>
-#include <FastLED.h>
-#include "mode1.h"
-#include "mode2.h"
+#include "led.h"
+#include "mode.h"
+#include "wifi-scan.h"
+
+#include "mode-proximity.h"
+#include "mode-custom.h"
+#include "mode-off.h"
+#include "mode-show-id.h"
+#include "mode-edit-custom.h"
 #include "mode-flash.h"
-
-
-// ESP-12E pin# of FLASH/PROGRAM/MODE button (left button)
-#define BUTTON_PIN 	0
-
-enum Modes {
-  ModeProximity = 0,
-  ModeCustom,
-  ModeOff,
-  ModeFlash,
-
-  ModeMax = ModeOff // cycle through to ModeOff (not ModeFlash) 
-};
-
-static Bounce button = Bounce();
-static uint mode = 0;
-static bool skipRise = false;
-
-static void blink(uint num);
-static String getName();
 
 
 void setup() {
   Serial.begin(115200);
-  Serial.printf("\nMy name is %s\n", (const char*)getName().c_str());
+  Serial.printf("\nSSID: %s\n", Wifi_GetName().c_str());
 
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
+  LED_Init();
+  Mode_Init();
+  Wifi_Init();
 
-  button.attach(BUTTON_PIN, INPUT_PULLUP);
-  button.interval(25);
+  Mode_Proximity_Init();
+}
 
-  Serial.printf("Now in mode: %d\n", mode + 1);
-  Mode_1_Init(getName());
+
+void loopX() {
+  static int pattern = 0;
+  
+  LED_Loop();
+  Wifi_Loop();
+
+  short oldMode = Mode_GetMode();
+  Mode_Loop();
+  short newMode = Mode_GetMode();
+
+  if (oldMode != newMode) {
+    pattern = (pattern + 1) % (LEDMax + 1);
+
+    Serial.printf("Now in pattern: %d\n", pattern + 1);
+
+    LED_ChangePattern(pattern);
+  }
 }
 
 
 void loop() {
-  button.update();
+  LED_Loop();
+  Wifi_Loop();
 
-  uint oldMode = mode;
-  if (oldMode != ModeFlash && !button.read() && button.currentDuration() >= 5000) {
+  short oldMode = Mode_GetMode();
+  Mode_Loop();
+  short newMode = Mode_GetMode();
+
+  if (oldMode != newMode) {
+    Serial.printf("mode %d => %d\n", oldMode, newMode);
+    
     switch (oldMode) {
       case ModeProximity:
-        // 5 sec push&hold does nothing here
-        break;
-        
-      case ModeCustom:
-        Mode_2_EnableUpdate();
-        break;
-        
-      case ModeOff:
-        mode = ModeFlash;
-        Serial.printf("*** entering flash mode ***\n");
-        break;
-    }
-
-    skipRise = true;
-  } else if (oldMode != ModeFlash && button.rose()) {
-    if (!skipRise) {
-      mode = (mode + 1) % (ModeMax + 1);
-      blink(mode);
-  
-      Serial.printf("Now in mode: %d\n", mode + 1);
-    }
-
-    skipRise = false;
-  }
-
-  if (oldMode != mode) {
-    switch (oldMode) {
-      case ModeProximity:
-        Mode_1_Shutdown();
+        if (newMode != ModeShowID) {
+          Serial.printf("shutting down proximity mode\n");
+          Mode_Proximity_Shutdown();
+        }
         break;
 
       case ModeCustom:
-        Mode_2_Shutdown();
+        if (newMode != ModeEditCustom) {
+          Serial.printf("shutting down custom mode\n");
+          Mode_Custom_Shutdown();
+        }
         break;
         
       case ModeOff:
-        // nothing to do here
+        if (newMode != ModeFlash) {
+          Serial.printf("shutting down off mode\n");
+          Mode_Off_Shutdown();
+        }
+        break;
+        
+      case ModeShowID:
+        Serial.printf("shutting down show id mode\n");
+        Mode_ShowID_Shutdown();
+        break;
+        
+      case ModeEditCustom:
+        Serial.printf("shutting down edit custom mode\n");
+        Mode_Edit_Custom_Shutdown();
         break;
         
       case ModeFlash:
+        Serial.printf("shutting down flash mode\n");
         Mode_Flash_Shutdown();
         break;
+
+      default:
+        Serial.printf("shutting down unknown mode %d\n", newMode);
+        Mode_Flash_Init();
+        break;
     }
 
-    switch (mode) {
+    switch (newMode) {
       case ModeProximity:
-        Mode_1_Init(getName());
+        Serial.printf("launching proximity mode\n");
+        Mode_Proximity_Init();
         break;
 
       case ModeCustom:
-        Mode_2_Init(getName());
+        Serial.printf("launching custom mode\n");
+        Mode_Custom_Init();
         break;
 
       case ModeOff:
-        // nothing to do here
+        Serial.printf("launching off mode\n");
+        Mode_Off_Init();
         break;
 
+      case ModeShowID:
+        Serial.printf("launching show id mode\n");
+        Mode_ShowID_Init();
+        break;
+        
+      case ModeEditCustom:
+        Serial.printf("launching edit custom mode\n");
+        Mode_Edit_Custom_Init();
+        break;
+        
       case ModeFlash:
-        Mode_Flash_Init(getName());
+        Serial.printf("launching flash mode\n");
+        Mode_Flash_Init();
+        break;
+
+      default:
+        Serial.printf("launching unknown mode %d\n", newMode);
+        Mode_Flash_Init();
         break;
     }
   }
 
-  delay(1);
-
-  switch (mode) {
+  switch (newMode) {
     case ModeProximity:
-      Mode_1_Loop();
+//      Serial.printf("running proximity mode\n");
+      Mode_Proximity_Loop();
       break;
 
     case ModeCustom:
-      Mode_2_Loop();
+//      Serial.printf("running custom mode\n");
+      Mode_Custom_Loop();
       break;
 
     case ModeOff:
-      // nothing to do here
+//      Serial.printf("running off mode\n");
+      Mode_Off_Loop();
       break;
 
+    case ModeShowID:
+//      Serial.printf("running show id mode\n");
+      Mode_ShowID_Loop();
+      break;
+      
+    case ModeEditCustom:
+//      Serial.printf("running edit custom mode\n");
+      Mode_Edit_Custom_Loop();
+      break;
+      
     case ModeFlash:
+//      Serial.printf("running flash mode\n");
       Mode_Flash_Loop();
       break;
+
+    default:
+      Serial.printf("running unknown mode %d\n", newMode);
+      break;
   }
-}
-
-
-void blink(uint num) {
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(5);
-  digitalWrite(LED_BUILTIN, HIGH);
-
-  for (uint n = 0; n < num; n++) {
-    delay(150);
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(5);
-    digitalWrite(LED_BUILTIN, HIGH);
-  }
-}
-
-
-String getName() {
-    char tmp[20];
-    sprintf(tmp, MODE_1_WIFI_SSID_PREFIX "%06x", ESP.getChipId());
-    return String(tmp);
 }
