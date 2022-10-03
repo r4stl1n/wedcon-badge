@@ -1,6 +1,7 @@
 #include <SD.h>
 
 #include "led.h"
+#include "config.h"
 
 
 static CRGB LED_leds[LED_NUM];
@@ -22,16 +23,8 @@ static unsigned long LED_toastStartedAt = 0;
 static short LED_previousPattern = 0;
 
 static struct ScriptLine LED_toastScript[] = {
-  { 10, { { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 } } },
-  { 10, { 
-      { LED_HUE_TOAST, LED_SATURATION_TOAST, LED_BRIGHTNESS_HIGH }, 
-      { LED_HUE_TOAST, LED_SATURATION_TOAST, LED_BRIGHTNESS_HIGH }, 
-      { LED_HUE_TOAST, LED_SATURATION_TOAST, LED_BRIGHTNESS_HIGH }, 
-      { LED_HUE_TOAST, LED_SATURATION_TOAST, LED_BRIGHTNESS_HIGH }, 
-      { LED_HUE_TOAST, LED_SATURATION_TOAST, LED_BRIGHTNESS_HIGH }, 
-      { LED_HUE_TOAST, LED_SATURATION_TOAST, LED_BRIGHTNESS_HIGH }
-    },
-  }
+  {   20, { { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 } } },
+  { 1000, { { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 } } }
 };
 
 static void LED_parseLine(String line);
@@ -46,8 +39,14 @@ void LED_Init() {
   FastLED.addLeds<NEOPIXEL, LED_DATA_PIN>(LED_leds, LED_NUM);
   LED_Off();
 
+  for (int n = 0; n < 6; n++ ) {
+    LED_toastScript[1].hsl[n].hue = Config().led.toast.hue;
+    LED_toastScript[1].hsl[n].saturation = Config().led.toast.saturation;
+    LED_toastScript[1].hsl[n].luminence = Config().led.toast.luminance;
+  }
+
   if (!SPIFFS.begin()) {
-    Serial.println("An Error has occurred while mounting SPIFFS");
+    Serial.println("An error has occurred while mounting SPIFFS");
     return;
   }
 
@@ -62,30 +61,30 @@ void LED_Loop() {
     break;
     
   case LEDRainbow:
-    FastLED.showColor(CHSV(LED_hue++, LED_SATURATION_NONE, LED_BRIGHTNESS_NONE));
+    FastLED.showColor(CHSV(LED_hue++, Config().led.none.saturation, Config().led.none.luminance));
     delay(20);
     break;
     
   case LEDBride:
     if (LED_nextStep()) {
-      FastLED.showColor(CHSV(LED_HUE_BRIDE, LED_SATURATION_BRIDE, LED_getNewBrightness()));
+      FastLED.showColor(CHSV(Config().led.bride.hue, Config().led.bride.saturation, LED_getNewBrightness()));
     }
     break;
     
   case LEDGroom:
     if (LED_nextStep()) {
-      FastLED.showColor(CHSV(LED_HUE_GROOM, LED_SATURATION_GROOM, LED_getNewBrightness()));
+      FastLED.showColor(CHSV(Config().led.groom.hue, Config().led.groom.saturation, LED_getNewBrightness()));
     }
     break;
     
   case LEDBoth:
     if (LED_nextStep()) {
-      FastLED.showColor(CHSV(LED_HUE_BOTH, LED_SATURATION_BOTH, LED_getNewBrightness()));
+      FastLED.showColor(CHSV(Config().led.both.hue, Config().led.both.saturation, LED_getNewBrightness()));
     }
     break;
     
   case LEDToast:
-    if ((millis() - LED_toastStartedAt) > LED_TOAST_TIMEOUT) {
+    if ((millis() - LED_toastStartedAt) > Config().led.toast.timeout) {
       LED_ChangePattern(LED_previousPattern);
     } else {
       LED_runScript();
@@ -109,6 +108,17 @@ void LED_Shutdown() {
 }
 
 
+struct ScriptLine* LED_GetScript(unsigned long& scriptLineCount) {
+  scriptLineCount = LED_scriptLineCount;
+  return LED_Script;
+}
+
+
+void LED_Off() {
+  FastLED.showColor(CHSV(0, 0, 0));
+}
+
+
 void LED_Flash(int count, const CHSV color) {
   FastLED.showColor(CHSV(0, 0, 0));
   delay(300);
@@ -119,11 +129,6 @@ void LED_Flash(int count, const CHSV color) {
     FastLED.showColor(CHSV(0, 0, 0));
     delay(300);
   }
-}
-
-
-void LED_Off() {
-  FastLED.showColor(CHSV(0, 0, 0));
 }
 
 
@@ -165,7 +170,12 @@ void LED_SetScript(int lines, struct ScriptLine* script) {
   LED_scriptLineCount = lines;
   LED_Script = script;
 
-  LED_ChangePattern(LEDScript);
+  LED_pattern = LEDScript;
+
+  LED_introIndex = 0;
+  LED_lastStepAt = millis();
+  LED_targetDuration = 0;
+  LED_scriptLineIndex = 0;
 }
 
 
@@ -241,9 +251,9 @@ bool LED_nextStep() {
 
 
 uint LED_getNewBrightness() {
-  const uint range = LED_BRIGHTNESS_HIGH - LED_BRIGHTNESS_LOW;
+  const uint range = Config().led.luminance.high - Config().led.luminance.low;
   LED_brightness = (LED_brightness + 1) % (range * 2);
-  return (LED_brightness > range ? 2 * range - LED_brightness : LED_brightness) + LED_BRIGHTNESS_LOW;
+  return (LED_brightness > range ? 2 * range - LED_brightness : LED_brightness) + Config().led.luminance.low;
 }
 
 
@@ -258,6 +268,17 @@ void LED_runScript() {
   }
 
 //  Serial.printf("showing line %d for %dms\n", LED_scriptLineIndex + 1, LED_Script[LED_scriptLineIndex].duration);
+/*
+  Serial.printf(" %3d: %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n", 
+                LED_scriptLineIndex + 1, LED_Script[LED_scriptLineIndex].duration,
+                LED_Script[LED_scriptLineIndex].hsl[0].hue, LED_Script[LED_scriptLineIndex].hsl[0].saturation, LED_Script[LED_scriptLineIndex].hsl[0].luminence,
+                LED_Script[LED_scriptLineIndex].hsl[1].hue, LED_Script[LED_scriptLineIndex].hsl[1].saturation, LED_Script[LED_scriptLineIndex].hsl[1].luminence,
+                LED_Script[LED_scriptLineIndex].hsl[2].hue, LED_Script[LED_scriptLineIndex].hsl[2].saturation, LED_Script[LED_scriptLineIndex].hsl[2].luminence,
+                LED_Script[LED_scriptLineIndex].hsl[3].hue, LED_Script[LED_scriptLineIndex].hsl[3].saturation, LED_Script[LED_scriptLineIndex].hsl[3].luminence,
+                LED_Script[LED_scriptLineIndex].hsl[4].hue, LED_Script[LED_scriptLineIndex].hsl[4].saturation, LED_Script[LED_scriptLineIndex].hsl[4].luminence,
+                LED_Script[LED_scriptLineIndex].hsl[5].hue, LED_Script[LED_scriptLineIndex].hsl[5].saturation, LED_Script[LED_scriptLineIndex].hsl[5].luminence
+              );
+*/
 
   LED_lastStepAt = millis();
   LED_targetDuration = LED_Script[LED_scriptLineIndex].duration;

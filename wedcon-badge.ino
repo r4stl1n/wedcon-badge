@@ -1,4 +1,5 @@
 #include "led.h"
+#include "config.h"
 #include "mode.h"
 #include "wifi-scan.h"
 
@@ -18,27 +19,15 @@ void setup() {
   Mode_Init();
   Wifi_Init();
 
-  Mode_Proximity_Init();
-}
-
-
-void loopX() {
-  static int pattern = 0;
-  
-  LED_Loop();
-  Wifi_Loop();
-
-  short oldMode = Mode_GetMode();
-  Mode_Loop();
-  short newMode = Mode_GetMode();
-
-  if (oldMode != newMode) {
-    pattern = (pattern + 1) % (LEDMax + 1);
-
-    Serial.printf("Now in pattern: %d\n", pattern + 1);
-
-    LED_ChangePattern(pattern);
+/*
+  if (!Config_Load()) {
+    Config_Save();
   }
+*/
+//  Config_Defaults();
+  Config_Load();
+
+  Mode_Proximity_Init();
 }
 
 

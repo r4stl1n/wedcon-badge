@@ -2,6 +2,7 @@
 #include <FastLED.h>
 
 #include "mode-proximity.h"
+#include "config.h"
 #include "wifi-scan.h"
 
 static unsigned long Mode_Proximity_lastSeen[WifiMax + 1];
@@ -63,7 +64,7 @@ void Mode_Proximity_Shutdown() {
 
 
 unsigned long Mode_Proximity_evalLastSeen(unsigned long lastSeen, int32_t rssi) {
-  if (rssi >= MODE_PROXIMITY_RSSI_HIGH) {
+  if (rssi >= Config().proximity.rssi.high) {
     return millis();
   }
 
@@ -71,11 +72,11 @@ unsigned long Mode_Proximity_evalLastSeen(unsigned long lastSeen, int32_t rssi) 
     return 0;
   }
 
-  if ((millis() - lastSeen) > MODE_PROXIMITY_TIMEOUT) {
+  if ((millis() - lastSeen) > Config().proximity.timeout) {
     return 0;
   }
 
-  if (rssi >= MODE_PROXIMITY_RSSI_LOW) {
+  if (rssi >= Config().proximity.rssi.low) {
     return millis();
   }
 

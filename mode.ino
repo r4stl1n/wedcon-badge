@@ -22,7 +22,7 @@ void Mode_Init() {
 void Mode_Loop() {
   Mode_button.update();
   
-  if (!Mode_button.read() && Mode_button.currentDuration() >= BUTTON_HOLD) {
+  if (!Mode_button.read() && Mode_button.currentDuration() >= Config().hold.timeout) {
     if (!Mode_skipRise) {
       switch (Mode_mode) {
         case ModeProximity:

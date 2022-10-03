@@ -23,13 +23,13 @@
 #define LED_BRIGHTNESS_NONE           50            // cycling rainbow
 #define LED_SATURATION_NONE           150           
 
-// toast
+// toast  
 #define LED_HUE_TOAST                 28           // yellow
 #define LED_SATURATION_TOAST          255            
 
 // intro settings
 #define LED_INTRO_CYCLES              5
-#define LED_INTRO_COUNT               (LED_INTRO_CYCLES * (LED_BRIGHTNESS_HIGH - LED_BRIGHTNESS_LOW) * 2)
+#define LED_INTRO_COUNT               (Config().led.intro.cycles * (Config().led.luminance.high - Config().led.luminance.low) * 2)
 #define LED_DELAY                     20
 
 // LED config
@@ -74,8 +74,9 @@ void LED_Init();
 void LED_Loop();
 void LED_Shutdown();
 
-void LED_Flash(int count, const CHSV color = CHSV(0, 0, 150));
+struct ScriptLine* LED_GetScript(unsigned long& scriptLineCount);
 void LED_Off();
+void LED_Flash(int count, const CHSV color = CHSV(0, 0, 150));
 void LED_ChangePattern(short pattern);
 void LED_SetScript(int lines, struct ScriptLine* script);
 bool LED_LoadScript(String name);

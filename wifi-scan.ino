@@ -29,18 +29,16 @@ static struct WifiInfo Wifi_networks[] = {
 
 static void Wifi_launchScan();
 
+/*
 static void say(String name) {
   Serial.printf(" '%s' => '%s' \n", name.c_str(), Wifi_GetHash(name).c_str());
 }
+*/
 
 
 void Wifi_Init() {
   WiFi.mode(WIFI_AP_STA);
   WiFi.disconnect();
-
-  say("wn01233");
-  say("wn00000");
-  say(Wifi_GetName());
 
   Wifi_launchScan();
 }
@@ -132,5 +130,5 @@ String Wifi_GetHash(String text) {
 
 
 void Wifi_launchScan() {
-  WiFi.scanNetworks(true, false, WIFI_CHANNEL);
+  WiFi.scanNetworks(true, false, Config().wifi.channel);
 }

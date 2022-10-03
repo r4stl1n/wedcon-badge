@@ -1,7 +1,7 @@
 #include "mode-show-id.h"
 
 
-static struct ScriptLine LED_digitScript[] = {
+const struct ScriptLine LED_digitScript[] = {
   { 500, { { 0, 0, 120 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } } },
   { 500, { { 0, 0, 0 }, { 0, 0, 120 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } } },
   { 500, { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 120 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } } },
@@ -31,15 +31,20 @@ static struct ScriptLine LED_idScript[] = {
   {  500, { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } } },
   { 1000, { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } } },
   {  500, { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } } },
-  { 2000, { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } } }
+  { 3000, { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } } }
 };
 
 static void Mode_ShowID_setID(int id);
 
+static struct ScriptLine* Mode_ShowID_previousScript = NULL;
+static unsigned long Mode_ShowID_previousScriptLineCount = 0;
+
 
 void Mode_ShowID_Init() {
+  Mode_ShowID_previousScript = LED_GetScript(Mode_ShowID_previousScriptLineCount);
   LED_ChangePattern(LEDOff);
-  
+
+  // TODO
   Mode_ShowID_setID(0, 3);
   Mode_ShowID_setID(1, 1);
   Mode_ShowID_setID(2, 1);
@@ -50,6 +55,7 @@ void Mode_ShowID_Init() {
   Mode_ShowID_setID(7, 4);
   Mode_ShowID_setID(8, 5);
   Mode_ShowID_setID(9, 0);
+  // TODO
 
   LED_Flash(1);
 
@@ -62,6 +68,7 @@ void Mode_ShowID_Loop() {
 
 
 void Mode_ShowID_Shutdown() {
+  LED_SetScript(Mode_ShowID_previousScriptLineCount, Mode_ShowID_previousScript);
   LED_Flash(1);
 }
 

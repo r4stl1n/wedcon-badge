@@ -56,6 +56,7 @@ To modify the firmware that came with your badge, clone the following repository
 * https://github.com/r4stl1n/wedcon-badge
 
 You need to add these libraries needed to build this firmware:
+* ArduinoJson
 * ArduinoOTA
 * Bounce2
 * Crypto
