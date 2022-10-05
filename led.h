@@ -43,7 +43,7 @@
 #define LED_CUSTOM_SCRIPT_FILE_NAME   "/custom-script.txt"
 #define LED_DEFAULT_SCRIPT_FILE_NAME  "/default-script.txt"
 
-#define LED_TOAST_TIMEOUT             30000
+#define LED_TOAST_TIMEOUT             10000
 
 
 struct ScriptLine {

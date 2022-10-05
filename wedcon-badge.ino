@@ -19,12 +19,6 @@ void setup() {
   Mode_Init();
   Wifi_Init();
 
-/*
-  if (!Config_Load()) {
-    Config_Save();
-  }
-*/
-//  Config_Defaults();
   Config_Load();
 
   Mode_Proximity_Init();
@@ -125,32 +119,26 @@ void loop() {
 
   switch (newMode) {
     case ModeProximity:
-//      Serial.printf("running proximity mode\n");
       Mode_Proximity_Loop();
       break;
 
     case ModeCustom:
-//      Serial.printf("running custom mode\n");
       Mode_Custom_Loop();
       break;
 
     case ModeOff:
-//      Serial.printf("running off mode\n");
       Mode_Off_Loop();
       break;
 
     case ModeShowID:
-//      Serial.printf("running show id mode\n");
       Mode_ShowID_Loop();
       break;
       
     case ModeEditCustom:
-//      Serial.printf("running edit custom mode\n");
       Mode_Edit_Custom_Loop();
       break;
       
     case ModeFlash:
-//      Serial.printf("running flash mode\n");
       Mode_Flash_Loop();
       break;
 

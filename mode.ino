@@ -50,8 +50,6 @@ void Mode_Loop() {
           break;
       }
 
-      Serial.printf("mode=%d\n", Mode_mode);
-
       Mode_skipRise = true;
     }
   } else if (Mode_button.rose()) {
@@ -60,8 +58,6 @@ void Mode_Loop() {
 
       Mode_blink(Mode_mode);
     }
-
-    Serial.printf("mode=%d\n", Mode_mode);
 
     Mode_skipRise = false;
   }

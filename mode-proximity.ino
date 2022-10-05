@@ -59,12 +59,17 @@ void Mode_Proximity_Loop() {
 }
 
 
+void Mode_Proximity_Restore() {
+  LED_ChangePattern(Mode_lastPattern);
+}
+
+
 void Mode_Proximity_Shutdown() {
 }
 
 
 unsigned long Mode_Proximity_evalLastSeen(unsigned long lastSeen, int32_t rssi) {
-  if (rssi >= Config().proximity.rssi.high) {
+  if (rssi < 0 && rssi >= Config().proximity.rssi.high) {
     return millis();
   }
 
@@ -76,7 +81,7 @@ unsigned long Mode_Proximity_evalLastSeen(unsigned long lastSeen, int32_t rssi) 
     return 0;
   }
 
-  if (rssi >= Config().proximity.rssi.low) {
+  if (rssi < 0 && rssi >= Config().proximity.rssi.low) {
     return millis();
   }
 

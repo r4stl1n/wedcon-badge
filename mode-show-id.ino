@@ -67,6 +67,11 @@ void Mode_ShowID_Loop() {
 }
 
 
+void Mode_ShowID_Restore() {
+  LED_SetScript(sizeof(LED_idScript)/sizeof(struct ScriptLine), LED_idScript);
+}
+
+
 void Mode_ShowID_Shutdown() {
   LED_SetScript(Mode_ShowID_previousScriptLineCount, Mode_ShowID_previousScript);
   LED_Flash(1);

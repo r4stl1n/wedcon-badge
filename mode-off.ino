@@ -10,5 +10,10 @@ void Mode_Off_Loop() {
 }
 
 
+void Mode_Off_Restore() {
+  LED_ChangePattern(LEDOff);
+}
+
+
 void Mode_Off_Shutdown() {
 }

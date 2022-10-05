@@ -61,8 +61,6 @@ You need to add these libraries needed to build this firmware:
 * Bounce2
 * Crypto
 * elapsedMillis
-* ESP8266WebServer
-* ESP8266WiFi
 * FastLED
 * SD
 

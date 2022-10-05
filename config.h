@@ -6,6 +6,10 @@
 struct ConfigData {
   struct {
     short channel;
+    struct {
+      unsigned long duration;
+      unsigned long pause;
+    } toast;
   } wifi;
 
   struct {

@@ -15,13 +15,11 @@ static bool Mode_Edit_Custom_loadFromSpiffs(String path);
 
 
 void Mode_Edit_Custom_Init() {
-  String name = Wifi_GetName();
-  WiFi.softAP(name);
-  delay(100);
+  if (!Wifi_StartAP(Wifi_GetName())) {
+    return;
+  }
 
-  Serial.printf("Ready. To upload your own script, join WiFi network %s\n", name.c_str());
-
-  delay(100);
+  Serial.printf("Ready. To upload your own script, join WiFi network\n");
 
   Mode_Edit_Custom_webserver.begin();
   Mode_Edit_Custom_webserver.on("/", HTTP_GET, Mode_Edit_Custom_handleOnIndex);
@@ -39,6 +37,8 @@ void Mode_Edit_Custom_Loop() {
 
 void Mode_Edit_Custom_Shutdown() {
   Mode_Edit_Custom_webserver.close();
+
+  Wifi_StopAP();
 
   LED_Flash(2);
 }

@@ -8,10 +8,13 @@
 
 
 static struct ConfigData Config_data;
+static StaticJsonDocument<1000> doc;
 
 
 void Config_Defaults() {
   Config_data.wifi.channel          = WIFI_CHANNEL;
+  Config_data.wifi.toast.duration   = WIFI_TOAST_DURATION;
+  Config_data.wifi.toast.pause      = WIFI_TOAST_PAUSE;
   Config_data.hold.timeout          = BUTTON_HOLD;
   Config_data.led.luminance.low     = LED_BRIGHTNESS_LOW;
   Config_data.led.luminance.high    = LED_BRIGHTNESS_HIGH;
@@ -43,7 +46,7 @@ bool Config_Load() {
     return false;
   }
 
-  StaticJsonDocument<1000> doc;
+  doc.clear();
   DeserializationError configError = deserializeJson(doc, configFile);  
   configFile.close();
 
@@ -56,6 +59,8 @@ bool Config_Load() {
   Serial.println();
 
   Config_data.wifi.channel          = doc[F("wifi")][F("channel")]                 | WIFI_CHANNEL;
+  Config_data.wifi.toast.duration   = doc[F("wifi")][F("toast")][F("duration")]    | WIFI_TOAST_DURATION;
+  Config_data.wifi.toast.pause      = doc[F("wifi")][F("toast")][F("pause")]       | WIFI_TOAST_PAUSE;
   Config_data.hold.timeout          = doc[F("hold")][F("timeout")]                 | BUTTON_HOLD;
   Config_data.led.luminance.low     = doc[F("led")][F("luminance")][F("low")]      | LED_BRIGHTNESS_LOW;
   Config_data.led.luminance.high    = doc[F("led")][F("luminance")][F("high")]     | LED_BRIGHTNESS_HIGH;
@@ -81,10 +86,12 @@ bool Config_Load() {
 
 
 bool Config_Save() {
-  StaticJsonDocument<1000> doc;
+  doc.clear();
 
   doc[F("wifi")][F("channel")]                = Config_data.wifi.channel;
   doc[F("hold")][F("timeout")]                = Config_data.hold.timeout;
+  doc[F("wifi")][F("toast")][F("duration")]   = Config_data.wifi.toast.duration;
+  doc[F("wifi")][F("toast")][F("pause")]      = Config_data.wifi.toast.pause;
   doc[F("led")][F("luminance")][F("low")]     = Config_data.led.luminance.low;
   doc[F("led")][F("luminance")][F("high")]    = Config_data.led.luminance.high;
   doc[F("led")][F("both")][F("hue")]          = Config_data.led.both.hue;
