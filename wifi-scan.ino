@@ -13,10 +13,10 @@ static struct WifiInfo Wifi_networks[] = {
   { // WifiToast
     WIFI_NO_RSSI, { "ead0d6ae21e8b5792397753fa9e7d4a2772e7ce2" }
   },
-  { // WifiRaveOn
+  { // WifiRave
     WIFI_NO_RSSI, { "e380dd5149661a80f83da0d3411a03600e47a27c" }
   },
-  { // WifiRaveOff
+  { // (unused)
     WIFI_NO_RSSI, { "7648dedebcd721835e2908afb104c7e11a559612" }
   }
 };
@@ -78,6 +78,7 @@ void Wifi_Loop() {
 
             switch (n) {
               case WifiToast:
+              case WifiRave:
                 if (Wifi_toastStartedAt == 0 || ((millis() - Wifi_toastStartedAt) > Config().wifi.toast.pause)) {
                   Wifi_toastStartedAt = millis();
 
@@ -93,57 +94,9 @@ void Wifi_Loop() {
                       break;
                   }
 
-                  LED_ChangePattern(LEDToast);
+                  LED_ChangePattern(n == WifiToast ? LEDToast : LEDRave);
                 }
-                break;
-
-              case WifiRaveOn:
-                switch (Mode_GetMode()) {
-                  case ModeProximity:
-                  case ModeCustom:
-                  case ModeOff:
-                  case ModeShowID:
-                    if (!Wifi_broadcasting) {
-                      Wifi_broadcasting = true;  
-                      Wifi_StartAPWithSecret(ssid); 
-                    }
-
-                    LED_ChangePattern(LEDRave);
-                    break;
-                }
-                break;        
-
-              case WifiRaveOff:
-                switch (Mode_GetMode()) {
-                  case ModeProximity:
-                  case ModeCustom:
-                  case ModeOff:
-                  case ModeShowID:
-                    if (!Wifi_broadcasting) {
-                      Wifi_broadcasting = true;    
-                      Wifi_StartAPWithSecret(ssid); 
-                    }
-                    break;
-                }
-                
-                switch (Mode_GetMode()) {
-                  case ModeProximity:
-                    Mode_Proximity_Restore();
-                    break;
-
-                  case ModeCustom:
-                    Mode_Custom_Restore();
-                    break;
-
-                  case ModeOff:
-                    Mode_Off_Restore();
-                    break;
-
-                  case ModeShowID:
-                    Mode_ShowID_Restore();
-                    break;
-                }
-                break;            
+                break; 
             }
           }
         }
@@ -157,7 +110,7 @@ void Wifi_Loop() {
     Wifi_broadcasting = false; 
   }
 
-/**/
+/**
   static unsigned long skipped = 0;
   static unsigned long printed = 0;
   if ((millis() - printed) > 1000) {
@@ -241,15 +194,44 @@ int32_t Wifi_GetRSSI(int kind) {
 }
 
 
+bool Wifi_GetID(byte* id, int len) {
+  if (len != Mode_ShowID_digitNum) {
+    return false;
+  }
+  
+  // convert ID to int array
+  unsigned long chipID = ESP.getChipId();
+  for (int n = Mode_ShowID_digitNum - 1; n >= 0; n--) {
+    char d = chipID % 6;
+    chipID /= 6;
+
+    id[n] = d;
+  }
+  
+  return true;
+}
+
+
 String Wifi_GetName() {
-    char tmp[40];
-    sprintf(tmp, WIFI_SSID_PREFIX "%06x", ESP.getChipId());
-    return String(tmp);
+  const char digits[] = { '0', '1', '2', '3', '4', '5' };
+  byte id[Mode_ShowID_digitNum];
+  Wifi_GetID(id, Mode_ShowID_digitNum);
+
+  char tmp[Mode_ShowID_digitNum + 1];
+  tmp[Mode_ShowID_digitNum] = 0;
+
+  // convert ID to string
+  for (int n = 0; n < Mode_ShowID_digitNum; n++) {
+    tmp[n] = digits[id[n]];
+  }
+  
+  String name = WIFI_SSID_PREFIX;
+  return name + tmp;
 }
 
 
 String Wifi_GetHash(String text) {
-    return sha1(text);
+  return sha1(text);
 }
 
 

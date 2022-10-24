@@ -46,13 +46,15 @@
 #define LED_TOAST_TIMEOUT             10000
 
 
+struct HSL {
+  byte hue;
+  byte saturation;
+  byte luminence;  
+};
+
 struct ScriptLine {
   short duration;
-  struct HSL {
-    byte hue;
-    byte saturation;
-    byte luminence;
-  } hsl[LED_NUM];
+  struct HSL hsl[LED_NUM];
 };
 
 

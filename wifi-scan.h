@@ -3,7 +3,7 @@
 
 // Wifi settings
 #define WIFI_CHANNEL         11
-#define WIFI_SSID_PREFIX     "m+r_wedding_11-11__"
+#define WIFI_SSID_PREFIX     "madroy_11-11_"
 #define WIFI_NO_RSSI         -1000
 #define WIFI_TOAST_DURATION  1000
 #define WIFI_TOAST_PAUSE     60000
@@ -13,10 +13,9 @@ enum {
 	WifiBride = 0,
 	WifiGroom,
 	WifiToast,
-	WifiRaveOn,
-	WifiRaveOff,
+	WifiRave,
 
-  WifiMax = WifiRaveOff
+  WifiMax = WifiRave
 };
 
 struct WifiInfo {
@@ -33,5 +32,6 @@ bool Wifi_StartAP(String name);
 bool Wifi_StartAPWithSecret(String name);
 void Wifi_StopAP();
 int32_t Wifi_GetRSSI(int kind);
+bool Wifi_GetID(byte* id, int len); // use: byte id[Mode_ShowID_digitNum];
 String Wifi_GetName();
 String Wifi_GetHash(String text);
