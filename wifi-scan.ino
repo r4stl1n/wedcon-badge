@@ -213,7 +213,7 @@ bool Wifi_GetID(byte* id, int len) {
 
 
 String Wifi_GetName() {
-  const char digits[] = { '0', '1', '2', '3', '4', '5' };
+  const char digits[] = { '1', '2', '3', '4', '5', '6' };
   byte id[Mode_ShowID_digitNum];
   Wifi_GetID(id, Mode_ShowID_digitNum);
 
