@@ -20,6 +20,7 @@ void setup() {
   Wifi_Init();
 
   Config_Load();
+  Config_Print();
 
   Mode_Proximity_Init();
 }

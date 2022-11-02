@@ -1,3 +1,5 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
 #include <Hash.h>
 
 #include "wifi-scan.h"
@@ -5,28 +7,28 @@
 
 static struct WifiInfo Wifi_networks[] = {
   { // WifiBride
-    WIFI_NO_RSSI, { "928e56d4dcb9171ffd38f3646439eb6fb5283e39" }
+    WIFI_NO_RSSI, { WIFI_BRIDE }, 0
   },
   { // WifiGroom
-    WIFI_NO_RSSI, { "abf77bfa1018789b96e58fc6b883024272a4129d" }
+    WIFI_NO_RSSI, { WIFI_GROOM }, 0
   },
   { // WifiToast
-    WIFI_NO_RSSI, { "ead0d6ae21e8b5792397753fa9e7d4a2772e7ce2" }
+    WIFI_NO_RSSI, { WIFI_TOAST }, 0
   },
   { // WifiRave
-    WIFI_NO_RSSI, { "e380dd5149661a80f83da0d3411a03600e47a27c" }
-  },
-  { // (unused)
-    WIFI_NO_RSSI, { "7648dedebcd721835e2908afb104c7e11a559612" }
+    WIFI_NO_RSSI, { WIFI_RAVE }, 0
   }
 };
 
 static unsigned long Wifi_toastStartedAt = 0;
 static bool Wifi_broadcasting = false;
 static bool Wifi_scanning = false;
+static bool Wifi_special = false;
+static int Wifi_state = WifiStateNone;
 
 static void Wifi_launchScan();
 static void Wifi_waitForScan();
+static String Wifi_typeName(int n);
 
 /**
 static void say(String name) {
@@ -37,22 +39,33 @@ static void say(String name) {
 
 void Wifi_Init() {
   WiFi.mode(WIFI_AP_STA);
-  WiFi.disconnect();
-
-  Wifi_launchScan();
+  Wifi_Switch(WifiStateListen);
 }
 
 
 void Wifi_Loop() {
+  if (Wifi_broadcasting) {
+    if ((millis() - Wifi_toastStartedAt) > Config().wifi.toast.duration) {
+      WiFi.softAPdisconnect(true);
+      Wifi_broadcasting = false; 
+      Wifi_launchScan();
+      Serial.printf("  stopped broadcasting\n");
+    }
+
+    return;
+  }
+  
   if (!Wifi_scanning) {
     return;
   }
 
-/*
-  delay(1);
-/**/
-
   int scanResult = WiFi.scanComplete();
+  bool isBride = false;
+  bool isGroom = false;
+  bool isToast = false;
+  bool isRave = false;
+  String toastSSID;
+  String raveSSID;
   switch (scanResult) {
     case 0:
       break;
@@ -65,38 +78,43 @@ void Wifi_Loop() {
       break;
 
     default:
-      for (int n = 0; n < scanResult; n++) {  
-        String ssid = WiFi.SSID(n);
+      for (int n = 0; n <= WifiMax; n++) {
+        Wifi_networks[n].rssi = WIFI_NO_RSSI;
+      }
 
-        for (int n = 0; n <= WifiMax; n++) {
-          Wifi_networks[n].rssi = WIFI_NO_RSSI;
-        }
+      for (int n = 0; n < scanResult; n++) {          
+        String ssid;
+        int32_t rssi;
+        uint8_t encryptionType;
+        uint8_t *bssid;
+        int32_t channel;
+        bool hidden;
+        WiFi.getNetworkInfo(n, ssid, encryptionType, rssi, bssid, channel, hidden);
+//        Serial.printf("  %3d: %s = %s [rssi %d] (ch %d)\n", n + 1, ssid.c_str(), Wifi_GetHash(ssid).c_str(), rssi, channel);
 
         for (int n = 0; n <= WifiMax; n++) {
           if (Wifi_GetHash(ssid).equals(Wifi_networks[n].ssidHash)) {
-            Wifi_networks[n].rssi = WiFi.RSSI(n);
+            Wifi_networks[n].rssi = rssi;
+            Wifi_networks[n].lastSeenAt = millis();
 
             switch (n) {
+              case WifiBride:
+                isBride = true;
+                break;
+                
+              case WifiGroom:
+                isGroom = true;
+                break;
+                
               case WifiToast:
+                isToast = true;
+                toastSSID = ssid;
+                break;
+                
               case WifiRave:
-                if (Wifi_toastStartedAt == 0 || ((millis() - Wifi_toastStartedAt) > Config().wifi.toast.pause)) {
-                  Wifi_toastStartedAt = millis();
-
-                  switch (Mode_GetMode()) {
-                    case ModeProximity:
-                    case ModeCustom:
-                    case ModeOff:
-                    case ModeShowID:
-                      if (!Wifi_broadcasting) {
-                        Wifi_broadcasting = true;
-                        Wifi_StartAPWithSecret(ssid);  
-                      }
-                      break;
-                  }
-
-                  LED_ChangePattern(n == WifiToast ? LEDToast : LEDRave);
-                }
-                break; 
+                isRave = true;
+                raveSSID = ssid;
+                break;
             }
           }
         }
@@ -105,83 +123,87 @@ void Wifi_Loop() {
       break;
   }
 
-  if (Wifi_broadcasting && ((millis() - Wifi_toastStartedAt) > Config().wifi.toast.duration)) {
-    Wifi_StopAP(); 
-    Wifi_broadcasting = false; 
-  }
+//  Serial.printf("  wifi: b=%d g=%d t=%d r=%d\n", isBride, isGroom, isToast, isRave);
 
-/**
-  static unsigned long skipped = 0;
-  static unsigned long printed = 0;
-  if ((millis() - printed) > 1000) {
-//    Serial.printf("\n %d scans/sec = %f ms/scan\n", skipped + 1, 1000.0/float(skipped + 1));
+  if (isToast) {
+    if ((millis() - Wifi_toastStartedAt) > Config().wifi.toast.pause) {
+      Wifi_toastStartedAt = millis();
+      Wifi_special = true;
+      Wifi_startAP(toastSSID, true);  
+      LED_ChangePattern(LEDToast);
+      Serial.printf("  broadcasting toast\n");
 
-    for (int n = 0; n <= WifiMax; n++) {
-      if (Wifi_networks[n].rssi > WIFI_NO_RSSI) {
-        Serial.printf("   %d: %6ddBm - %s\n", n + 1, Wifi_networks[n].rssi, Wifi_networks[n].ssidHash);
-      }
+      return;
     }
-    
-    printed = millis();
-    skipped = 0;
+  } else if (isRave) {
+    if ((millis() - Wifi_toastStartedAt) > Config().wifi.toast.pause) {
+      Wifi_toastStartedAt = millis();
+      Wifi_special = true;
+      Wifi_startAP(raveSSID, true);  
+      LED_ChangePattern(LEDRave);
+      Serial.printf("  broadcasting rave\n");
+
+      return;
+    }
   } else {
-    skipped++;
+    if (Wifi_special && (millis() - Wifi_toastStartedAt) > Config().led.toast.timeout) {
+      LED_ChangePattern(LEDPrevious);
+      Wifi_special = false;
+    }
   }
-/**/
-
+ 
   Wifi_launchScan();
 }
 
 
-void Wifi_Shutdown(){
+void Wifi_Shutdown() {
+  Wifi_waitForScan();
   WiFi.disconnect();
+  WiFi.softAPdisconnect(true);
 }
 
 
-bool Wifi_StartAP(String name) {
-  Wifi_waitForScan();
+void Wifi_Switch(int state) {
+  if (state == Wifi_state) {
+    return;
+  }
 
-  WiFi.softAPdisconnect(true);
-  WiFi.disconnect();
+  Wifi_state = state;
+  switch (Wifi_state) {
+    case WifiStateSelf:
+      Wifi_startAP(Wifi_GetName(), false);
+      break;
 
-  if (!WiFi.softAP(name.c_str(), NULL, Config().wifi.channel)) {
-    Serial.printf("Failed to start WiFi network %s\n", name.c_str());
-    return false;
-  };
+    case WifiStateListen:
+      Wifi_Shutdown();
+      Wifi_launchScan();
+      break;
+  }
+}
 
+
+bool Wifi_startAP(String name, bool hasSecret) {
+  Wifi_Shutdown();
+
+  if (hasSecret) {  
+    char tmp[100];
+    sprintf(tmp, "time=%04x, id=%06x", micros(), ESP.getChipId());
+
+    if (!WiFi.softAP(name, Wifi_GetHash(tmp))) {
+      Serial.printf("Failed to start WiFi network %s\n", name.c_str());
+      return false;
+    }
+  } else {
+    if (!WiFi.softAP(name)) {
+      Serial.printf("Failed to start WiFi network %s\n", name.c_str());
+      return false;
+    }
+  }
 
   Serial.printf("Started WiFi network %s\n", name.c_str());
+  Wifi_broadcasting = true;
 
-//  delay(100);
   return true;
-}
-
-
-bool Wifi_StartAPWithSecret(String name) {
-  Wifi_waitForScan();
-
-  WiFi.softAPdisconnect(true);
-  WiFi.disconnect();
-  
-  char tmp[100];
-  sprintf(tmp, "time=%04x, id=%06x", micros(), ESP.getChipId());
-
-  if (!WiFi.softAP(name, Wifi_GetHash(tmp), Config().wifi.channel)) {
-    Serial.printf("Failed to start WiFi network %s\n", name.c_str());
-    return false;
-  };
-
-  Serial.printf("Started WiFi network %s\n", name.c_str());
-
-//  delay(100);
-  return true;
-}
-
-
-void Wifi_StopAP() {
-  WiFi.softAPdisconnect(true);
-//  delay(100);
-  Wifi_launchScan();
 }
 
 
@@ -237,7 +259,7 @@ String Wifi_GetHash(String text) {
 
 void Wifi_launchScan() {
   Wifi_scanning = true;
-  WiFi.scanNetworks(true, false, Config().wifi.channel);
+  WiFi.scanNetworks(true, false, 1);
 }
 
 
@@ -252,4 +274,24 @@ void Wifi_waitForScan() {
 
   WiFi.scanDelete();
   Wifi_scanning = false;
+}
+
+
+String Wifi_typeName(int n) {
+  switch (n) {
+    case WifiBride:
+      return "bride";
+    
+    case WifiGroom:
+      return "groom";
+    
+    case WifiToast:
+      return "toast";
+    
+    case WifiRave:
+      return "rave";
+
+    default:
+      return String(n);
+  }
 }

@@ -15,9 +15,7 @@ static bool Mode_Edit_Custom_loadFromSpiffs(String path);
 
 
 void Mode_Edit_Custom_Init() {
-  if (!Wifi_StartAP(Wifi_GetName())) {
-    return;
-  }
+  Wifi_Switch(WifiStateSelf);
 
   Serial.printf("Ready. To upload your own script, join WiFi network\n");
 
@@ -38,7 +36,7 @@ void Mode_Edit_Custom_Loop() {
 void Mode_Edit_Custom_Shutdown() {
   Mode_Edit_Custom_webserver.close();
 
-  Wifi_StopAP();
+  Wifi_Switch(WifiStateListen);
 
   LED_Flash(2);
 }

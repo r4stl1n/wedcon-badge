@@ -3,7 +3,6 @@
 
 
 // 2^32 - 1 = 4,294,967,295 base 10 = 1,550,104,015,503 base 6 (13 digits)
-#define Mode_ShowID_digitNum      13
 #define Mode_ShowID_scriptLength  (Mode_ShowID_digitNum * 2 + 1)
 #define Mode_ShowID_on            {0, 0, 120}
 #define Mode_ShowID_off           {0, 0, 0}

@@ -10,6 +10,9 @@
 static struct ConfigData Config_data;
 static StaticJsonDocument<1000> doc;
 
+static void Config_toDoc();
+static void Config_fromDoc();
+
 
 void Config_Defaults() {
   Config_data.wifi.channel          = WIFI_CHANNEL;
@@ -55,37 +58,41 @@ bool Config_Load() {
     return false;
   }
 
-  serializeJsonPretty(doc, Serial);
-  Serial.println();
-
-  Config_data.wifi.channel          = doc[F("wifi")][F("channel")]                 | WIFI_CHANNEL;
-  Config_data.wifi.toast.duration   = doc[F("wifi")][F("toast")][F("duration")]    | WIFI_TOAST_DURATION;
-  Config_data.wifi.toast.pause      = doc[F("wifi")][F("toast")][F("pause")]       | WIFI_TOAST_PAUSE;
-  Config_data.hold.timeout          = doc[F("hold")][F("timeout")]                 | BUTTON_HOLD;
-  Config_data.led.luminance.low     = doc[F("led")][F("luminance")][F("low")]      | LED_BRIGHTNESS_LOW;
-  Config_data.led.luminance.high    = doc[F("led")][F("luminance")][F("high")]     | LED_BRIGHTNESS_HIGH;
-  Config_data.led.both.hue          = doc[F("led")][F("both")][F("hue")]           | LED_HUE_BOTH;
-  Config_data.led.both.saturation   = doc[F("led")][F("both")][F("saturation")]    | LED_SATURATION_BOTH;
-  Config_data.led.bride.hue         = doc[F("led")][F("bride")][F("hue")]          | LED_HUE_BRIDE;
-  Config_data.led.bride.saturation  = doc[F("led")][F("bride")][F("saturation")]   | LED_SATURATION_BRIDE;
-  Config_data.led.groom.hue         = doc[F("led")][F("groom")][F("hue")]          | LED_HUE_GROOM;
-  Config_data.led.groom.saturation  = doc[F("led")][F("groom")][F("saturation")]   | LED_SATURATION_GROOM;
-  Config_data.led.none.saturation   = doc[F("led")][F("none")][F("saturation")]    | LED_SATURATION_NONE;
-  Config_data.led.none.luminance    = doc[F("led")][F("none")][F("luminance")]     | LED_BRIGHTNESS_NONE;
-  Config_data.led.toast.hue         = doc[F("led")][F("toast")][F("hue")]          | LED_HUE_TOAST;
-  Config_data.led.toast.saturation  = doc[F("led")][F("toast")][F("saturation")]   | LED_SATURATION_TOAST;
-  Config_data.led.toast.luminance   = doc[F("led")][F("toast")][F("luminance")]    | LED_BRIGHTNESS_HIGH;
-  Config_data.led.toast.timeout     = doc[F("led")][F("toast")][F("timeout")]      | LED_TOAST_TIMEOUT;
-  Config_data.led.intro.cycles      = doc[F("led")][F("intro")][F("cycles")]       | LED_INTRO_CYCLES;
-  Config_data.proximity.rssi.low    = doc[F("proximity")][F("rssi")][F("low")]     | MODE_PROXIMITY_RSSI_LOW;
-  Config_data.proximity.rssi.high   = doc[F("proximity")][F("rssi")][F("high")]    | MODE_PROXIMITY_RSSI_HIGH;
-  Config_data.proximity.timeout     = doc[F("proximity")][F("timeout")]            | MODE_PROXIMITY_TIMEOUT;
+  Config_fromDoc();
 
   return true;
 }
 
 
 bool Config_Save() {
+  Config_toDoc();
+  
+  File configFile = SPIFFS.open(CONFIG_FILE_NAME, "w");
+  if (!configFile) {
+    Serial.printf("Failed to open config file %s\n", CONFIG_FILE_NAME);
+    return false;
+  }
+
+  serializeJsonPretty(doc, configFile);
+  configFile.close();
+
+  return true;
+}
+
+
+void Config_Print() {
+  Config_toDoc();
+
+  serializeJsonPretty(doc, Serial);
+  Serial.println();
+}
+
+
+const struct ConfigData& Config() {
+  return Config_data;
+}
+
+void Config_toDoc() {
   doc.clear();
 
   doc[F("wifi")][F("channel")]                = Config_data.wifi.channel;
@@ -110,20 +117,31 @@ bool Config_Save() {
   doc[F("proximity")][F("rssi")][F("low")]    = Config_data.proximity.rssi.low;
   doc[F("proximity")][F("rssi")][F("high")]   = Config_data.proximity.rssi.high;
   doc[F("proximity")][F("timeout")]           = Config_data.proximity.timeout;
-
-  File configFile = SPIFFS.open(CONFIG_FILE_NAME, "w");
-  if (!configFile) {
-    Serial.printf("Failed to open config file %s\n", CONFIG_FILE_NAME);
-    return false;
-  }
-
-  serializeJsonPretty(doc, configFile);
-  configFile.close();
-
-  return true;
 }
 
 
-const struct ConfigData& Config() {
-  return Config_data;
+void Config_fromDoc() {
+  Config_data.wifi.channel          = doc[F("wifi")][F("channel")]                 | WIFI_CHANNEL;
+  Config_data.wifi.toast.duration   = doc[F("wifi")][F("toast")][F("duration")]    | WIFI_TOAST_DURATION;
+  Config_data.wifi.toast.pause      = doc[F("wifi")][F("toast")][F("pause")]       | WIFI_TOAST_PAUSE;
+  Config_data.hold.timeout          = doc[F("hold")][F("timeout")]                 | BUTTON_HOLD;
+  Config_data.led.luminance.low     = doc[F("led")][F("luminance")][F("low")]      | LED_BRIGHTNESS_LOW;
+  Config_data.led.luminance.high    = doc[F("led")][F("luminance")][F("high")]     | LED_BRIGHTNESS_HIGH;
+  Config_data.led.both.hue          = doc[F("led")][F("both")][F("hue")]           | LED_HUE_BOTH;
+  Config_data.led.both.saturation   = doc[F("led")][F("both")][F("saturation")]    | LED_SATURATION_BOTH;
+  Config_data.led.bride.hue         = doc[F("led")][F("bride")][F("hue")]          | LED_HUE_BRIDE;
+  Config_data.led.bride.saturation  = doc[F("led")][F("bride")][F("saturation")]   | LED_SATURATION_BRIDE;
+  Config_data.led.groom.hue         = doc[F("led")][F("groom")][F("hue")]          | LED_HUE_GROOM;
+  Config_data.led.groom.saturation  = doc[F("led")][F("groom")][F("saturation")]   | LED_SATURATION_GROOM;
+  Config_data.led.none.saturation   = doc[F("led")][F("none")][F("saturation")]    | LED_SATURATION_NONE;
+  Config_data.led.none.luminance    = doc[F("led")][F("none")][F("luminance")]     | LED_BRIGHTNESS_NONE;
+  Config_data.led.toast.hue         = doc[F("led")][F("toast")][F("hue")]          | LED_HUE_TOAST;
+  Config_data.led.toast.saturation  = doc[F("led")][F("toast")][F("saturation")]   | LED_SATURATION_TOAST;
+  Config_data.led.toast.luminance   = doc[F("led")][F("toast")][F("luminance")]    | LED_BRIGHTNESS_HIGH;
+  Config_data.led.toast.timeout     = doc[F("led")][F("toast")][F("timeout")]      | LED_TOAST_TIMEOUT;
+  Config_data.led.intro.cycles      = doc[F("led")][F("intro")][F("cycles")]       | LED_INTRO_CYCLES;
+  Config_data.proximity.rssi.low    = doc[F("proximity")][F("rssi")][F("low")]     | MODE_PROXIMITY_RSSI_LOW;
+  Config_data.proximity.rssi.high   = doc[F("proximity")][F("rssi")][F("high")]    | MODE_PROXIMITY_RSSI_HIGH;
+  Config_data.proximity.timeout     = doc[F("proximity")][F("timeout")]            | MODE_PROXIMITY_TIMEOUT;
+
 }

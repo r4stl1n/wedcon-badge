@@ -1,0 +1,32 @@
+{
+  "wifi": {
+     "channel": 11,
+     "toast": {
+       "duration": 1000,
+       "pause": 20000
+     }
+   },
+   "hold": {
+     "timeout": 3000
+   },
+   "led": {
+     "luminance": {
+       "low": 30,
+       "high": 90
+     },
+     "bride": {
+       "hue": 150,
+       "saturation": 200
+     },
+     "groom": {
+       "hue": 210,
+       "saturation": 255
+     },
+     "toast": {
+       "hue": 28,
+       "saturation": 255,
+       "luminance": 90,
+       "timeout": 20000
+     }
+   }
+}

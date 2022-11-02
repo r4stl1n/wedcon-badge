@@ -1,5 +1,7 @@
 #pragma once
 
+#define Mode_ShowID_digitNum      13
+
 
 void Mode_ShowID_Init();
 void Mode_ShowID_Loop();

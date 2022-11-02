@@ -1,4 +1,5 @@
 #include <SD.h>
+#include <FastLED.h>
 
 #include "led.h"
 #include "config.h"
@@ -7,27 +8,19 @@
 static CRGB LED_leds[LED_NUM];
 
 static struct ScriptLine* LED_Script;
-static struct ScriptLine LED_ScriptBuffer[LED_MAX_SCRIPT_SIZE];
+static struct ScriptLine LED_ScriptBuffer[LED_MAX_SCRIPT_SIZE + 1];
 static unsigned long LED_scriptLineCount = 0;
-
 static short LED_pattern = LEDOff;
 static byte LED_hue = 0;
 static uint LED_brightness = 0;
-
 static unsigned long LED_introIndex = 0;
 static unsigned long LED_lastStepAt = 0;
 static unsigned long LED_targetDuration = 0;
 static unsigned long LED_scriptLineIndex = 0;
 static unsigned long LED_lastTickAt = 0;
-static unsigned long LED_toastStartedAt = 0;
-static short LED_previousPattern = 0;
+static short LED_previousPattern = LEDOff;
 
-static struct ScriptLine LED_toastScript[] = {
-  {   20, { { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 } } },
-  { 1000, { { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 }, { 0, 0, 255 } } }
-};
-
-static void LED_parseLine(String line);
+static bool LED_parseLine(String line, ScriptLine& scriptLine);
 static bool LED_nextStep();
 static uint LED_getNewBrightness();
 static void LED_runScript();
@@ -38,12 +31,6 @@ static String LED_patternName(short pattern);
 void LED_Init() {
   FastLED.addLeds<NEOPIXEL, LED_DATA_PIN>(LED_leds, LED_NUM);
   LED_Off();
-
-  for (int n = 0; n < 6; n++ ) {
-    LED_toastScript[1].hsl[n].hue = Config().led.toast.hue;
-    LED_toastScript[1].hsl[n].saturation = Config().led.toast.saturation;
-    LED_toastScript[1].hsl[n].luminence = Config().led.toast.luminance;
-  }
 
   if (!SPIFFS.begin()) {
     Serial.println("An error has occurred while mounting SPIFFS");
@@ -62,7 +49,7 @@ void LED_Loop() {
     
   case LEDRainbow:
     FastLED.showColor(CHSV(LED_hue++, Config().led.none.saturation, Config().led.none.luminance));
-    delay(20);
+    delay(LED_DELAY);
     break;
     
   case LEDBride:
@@ -83,15 +70,8 @@ void LED_Loop() {
     }
     break;
     
+  case LEDRave:   
   case LEDToast:
-    if ((millis() - LED_toastStartedAt) > Config().led.toast.timeout) {
-      LED_ChangePattern(LED_previousPattern);
-    } else {
-      LED_runScript();
-    }
-    break;
-
-  case LEDRave:    
   case LEDScript:
     LED_runScript();
     break;
@@ -133,31 +113,45 @@ void LED_Flash(int count, const CHSV color) {
 
 
 void LED_ChangePattern(short pattern) {
+  if (pattern == LED_pattern) {
+    return;
+  }
+  
   Serial.printf("new LED pattern: %d = %s\n", pattern, LED_patternName(pattern).c_str());
   
   FastLED.showColor(CHSV(0, 0, 0));
   
   switch (pattern) {
-  case LEDToast:
-    LED_toastStartedAt = millis();    
+  case LEDToast:  
     LED_previousPattern = LED_pattern;
-    if (!LED_LoadScript(LED_TOAST_SCRIPT_FILE_NAME)) {
-      LED_SetScript(sizeof(LED_toastScript)/sizeof(struct ScriptLine), LED_toastScript);
-    }
+    LED_LoadScript(LED_TOAST_LAUNCH_SCRIPT_FILE_NAME);
+    LED_pattern = pattern;
     break;
     
   case LEDRave:
-    LED_LoadScript(LED_RAVE_SCRIPT_FILE_NAME);
+    LED_previousPattern = LED_pattern;
+    LED_LoadScript(LED_RAVE_LAUNCH_SCRIPT_FILE_NAME);
+    LED_pattern = pattern;
     break;
 
   case LEDScript:
     if (!LED_LoadScript(LED_CUSTOM_SCRIPT_FILE_NAME)) {
       LED_LoadScript(LED_DEFAULT_SCRIPT_FILE_NAME);
     }
+    LED_pattern = pattern;
+    break;
+
+  case LEDPrevious:
+    LED_pattern = LED_previousPattern;
+    break;
+
+  default:
+    if (LED_pattern == LEDToast || LED_pattern == LEDRave) {
+      return;
+    }
+    LED_pattern = pattern;
     break;
   }
-  
-  LED_pattern = pattern;
 
   LED_introIndex = 0;
   LED_lastStepAt = millis();
@@ -188,32 +182,31 @@ bool LED_LoadScript(String name) {
 
   ScriptLine scriptLine;
   int scriptLineCount = 0;
-  String data = "";
+  char buf[LED_BUFFER_SIZE];
+  char* beg = buf;
+  String data;
   while (scriptFile.available() && scriptLineCount < LED_MAX_SCRIPT_SIZE) {
-    char c = scriptFile.read();
-    if (c != '\n') {
-      data += c;
-      continue;
-    }
-
-    if (LED_parseLine(data, scriptLine)) {
-      Serial.printf("Processing line %d: %s\n", scriptLineCount + 1, data.c_str());
-
-      LED_ScriptBuffer[scriptLineCount++] = scriptLine;
-    }
+    size_t len = scriptFile.readBytes(buf, LED_BUFFER_SIZE - 1);
+    buf[LED_BUFFER_SIZE - 1] = 0;
+    beg = buf;
     
-    data = "";
+    for (char* end = strchr(buf, '\n'); end != NULL; end = strchr(end + 1, '\n')) { 
+      end[0] = 0;
+      data += beg;
+      
+      if (LED_parseLine(data, scriptLine)) {
+        LED_ScriptBuffer[scriptLineCount++] = scriptLine;
+      }
+
+      data = end + 1;
+    }
   }
 
-  if (LED_parseLine(data, scriptLine)) {    
-    Serial.printf("Processing line %d: %s\n", scriptLineCount + 1, data.c_str());
-
+  if ((scriptLineCount < LED_MAX_SCRIPT_SIZE) && LED_parseLine(data, scriptLine)) {   
     LED_ScriptBuffer[scriptLineCount++] = scriptLine;
   }
   
   scriptFile.close();
-
-  Serial.printf("Script contains %d lines\n", scriptLineCount);
 
   LED_SetScript(scriptLineCount, LED_ScriptBuffer);
 
@@ -265,6 +258,10 @@ void LED_runScript() {
 
   if ((LED_targetDuration > 0) && ((millis() - LED_lastStepAt) < LED_targetDuration)) {
     return;
+  }
+
+  if (LED_targetDuration > 0) {
+//    Serial.printf("  %3d: %dms >= %dms\n", LED_scriptLineIndex + 1, (millis() - LED_lastStepAt), LED_targetDuration);
   }
 
 //  Serial.printf("showing line %d for %dms\n", LED_scriptLineIndex + 1, LED_Script[LED_scriptLineIndex].duration);

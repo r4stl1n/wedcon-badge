@@ -67,4 +67,5 @@ struct ConfigData {
 void Config_Defaults();
 bool Config_Load();
 bool Config_Save();
+void Config_Print();
 const struct ConfigData& Config();

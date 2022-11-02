@@ -39,9 +39,34 @@ function addLedStep() {
 
 function resetScript() {
     document.getElementById('ledscript').value = "";
+    loadScriptFromDisk();
+
+    if (document.getElementById('ledscript').value.length == 0) {
+        loadDefaultScriptFromDisk();
+    }
 
     Toastify({
         text: "Reset script",
+        duration: 1000,
+        destination: "https://github.com/apvarun/toastify-js",
+        newWindow: false,
+        close: true,
+        gravity: "top", // `top` or `bottom`
+        position: "right", // `left`, `center` or `right`
+        stopOnFocus: true, // Prevents dismissing of toast on hover
+        style: {
+            background: "#e85600",
+        },
+        onClick: function() {} // Callback after click
+    }).showToast();
+}
+
+function defaultScript() {
+    document.getElementById('ledscript').value = "";
+    loadDefaultScriptFromDisk();
+
+    Toastify({
+        text: "Load default script",
         duration: 1000,
         destination: "https://github.com/apvarun/toastify-js",
         newWindow: false,
@@ -130,8 +155,16 @@ function updateDuration() {
 
 }
 
+function loadDefaultScriptFromDisk() {
+    const url = "/default-script.txt";
+    fetch(url)
+        .then(r => r.text())
+        .then(t => document.getElementById('ledscript').value = t);
+
+}
+
 function loadScriptFromDisk() {
-    const url = "/mode2-script.txt";
+    const url = "/custom-script.txt";
     fetch(url)
         .then(r => r.text())
         .then(t => document.getElementById('ledscript').value = t);
