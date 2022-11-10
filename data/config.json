@@ -1,7 +1,7 @@
 {
   "wifi": {
      "channel": 11,
-     "toast": {
+     "beacon": {
        "duration": 1000,
        "pause": 20000
      }

@@ -12,11 +12,5 @@ void Mode_Custom_Loop() {
 }
 
 
-void Mode_Custom_Restore() {
-  LED_Off();
-  LED_ChangePattern(LEDScript);
-}
-
-
 void Mode_Custom_Shutdown() {
 }

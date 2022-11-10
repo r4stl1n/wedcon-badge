@@ -9,7 +9,7 @@ struct ConfigData {
     struct {
       unsigned long duration;
       unsigned long pause;
-    } toast;
+    } beacon;
   } wifi;
 
   struct {

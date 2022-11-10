@@ -11,6 +11,7 @@ static struct ScriptLine* LED_Script;
 static struct ScriptLine LED_ScriptBuffer[LED_MAX_SCRIPT_SIZE + 1];
 static unsigned long LED_scriptLineCount = 0;
 static short LED_pattern = LEDOff;
+static short LED_shadowPattern = LEDOff;
 static byte LED_hue = 0;
 static uint LED_brightness = 0;
 static unsigned long LED_introIndex = 0;
@@ -18,7 +19,7 @@ static unsigned long LED_lastStepAt = 0;
 static unsigned long LED_targetDuration = 0;
 static unsigned long LED_scriptLineIndex = 0;
 static unsigned long LED_lastTickAt = 0;
-static short LED_previousPattern = LEDOff;
+static unsigned long LED_toastStartedAt = 0;
 
 static bool LED_parseLine(String line, ScriptLine& scriptLine);
 static bool LED_nextStep();
@@ -42,6 +43,22 @@ void LED_Init() {
 
 
 void LED_Loop() {
+  if (LED_toastStartedAt > 0 && (millis() - LED_toastStartedAt) > Config().led.toast.timeout) {
+    LED_toastStartedAt = 0;
+    LED_pattern = LED_shadowPattern;
+
+    if (LED_shadowPattern == LEDScript) {
+      if (!LED_LoadScript(LED_CUSTOM_SCRIPT_FILE_NAME)) {
+        LED_LoadScript(LED_DEFAULT_SCRIPT_FILE_NAME);
+      }
+      
+      LED_introIndex = 0;
+      LED_lastStepAt = millis();
+      LED_targetDuration = 0;
+      LED_scriptLineIndex = 0;
+    }
+  }
+
   switch(LED_pattern) {
   case LEDOff:
     LED_Off();
@@ -113,46 +130,46 @@ void LED_Flash(int count, const CHSV color) {
 
 
 void LED_ChangePattern(short pattern) {
+  switch (pattern) {
+  case LEDToast:  
+  case LEDRave:
+    LED_toastStartedAt = millis();
+    break;
+  }
+  
   if (pattern == LED_pattern) {
     return;
   }
-  
+
   Serial.printf("new LED pattern: %d = %s\n", pattern, LED_patternName(pattern).c_str());
   
   FastLED.showColor(CHSV(0, 0, 0));
   
   switch (pattern) {
   case LEDToast:  
-    LED_previousPattern = LED_pattern;
     LED_LoadScript(LED_TOAST_LAUNCH_SCRIPT_FILE_NAME);
-    LED_pattern = pattern;
     break;
     
   case LEDRave:
-    LED_previousPattern = LED_pattern;
     LED_LoadScript(LED_RAVE_LAUNCH_SCRIPT_FILE_NAME);
-    LED_pattern = pattern;
     break;
 
   case LEDScript:
+    LED_shadowPattern = pattern;
     if (!LED_LoadScript(LED_CUSTOM_SCRIPT_FILE_NAME)) {
       LED_LoadScript(LED_DEFAULT_SCRIPT_FILE_NAME);
     }
-    LED_pattern = pattern;
-    break;
-
-  case LEDPrevious:
-    LED_pattern = LED_previousPattern;
     break;
 
   default:
-    if (LED_pattern == LEDToast || LED_pattern == LEDRave) {
+    LED_shadowPattern = pattern;
+    if (LED_toastStartedAt > 0 && (millis() - LED_toastStartedAt) <= Config().led.toast.timeout) {
       return;
     }
-    LED_pattern = pattern;
     break;
   }
 
+  LED_pattern = pattern;  
   LED_introIndex = 0;
   LED_lastStepAt = millis();
   LED_targetDuration = 0;

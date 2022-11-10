@@ -16,8 +16,8 @@ static void Config_fromDoc();
 
 void Config_Defaults() {
   Config_data.wifi.channel          = WIFI_CHANNEL;
-  Config_data.wifi.toast.duration   = WIFI_TOAST_DURATION;
-  Config_data.wifi.toast.pause      = WIFI_TOAST_PAUSE;
+  Config_data.wifi.beacon.duration  = WIFI_BEACON_DURATION;
+  Config_data.wifi.beacon.pause     = WIFI_BEACON_PAUSE;
   Config_data.hold.timeout          = BUTTON_HOLD;
   Config_data.led.luminance.low     = LED_BRIGHTNESS_LOW;
   Config_data.led.luminance.high    = LED_BRIGHTNESS_HIGH;
@@ -97,8 +97,8 @@ void Config_toDoc() {
 
   doc[F("wifi")][F("channel")]                = Config_data.wifi.channel;
   doc[F("hold")][F("timeout")]                = Config_data.hold.timeout;
-  doc[F("wifi")][F("toast")][F("duration")]   = Config_data.wifi.toast.duration;
-  doc[F("wifi")][F("toast")][F("pause")]      = Config_data.wifi.toast.pause;
+  doc[F("wifi")][F("beacon")][F("duration")]  = Config_data.wifi.beacon.duration;
+  doc[F("wifi")][F("beacon")][F("pause")]     = Config_data.wifi.beacon.pause;
   doc[F("led")][F("luminance")][F("low")]     = Config_data.led.luminance.low;
   doc[F("led")][F("luminance")][F("high")]    = Config_data.led.luminance.high;
   doc[F("led")][F("both")][F("hue")]          = Config_data.led.both.hue;
@@ -122,8 +122,8 @@ void Config_toDoc() {
 
 void Config_fromDoc() {
   Config_data.wifi.channel          = doc[F("wifi")][F("channel")]                 | WIFI_CHANNEL;
-  Config_data.wifi.toast.duration   = doc[F("wifi")][F("toast")][F("duration")]    | WIFI_TOAST_DURATION;
-  Config_data.wifi.toast.pause      = doc[F("wifi")][F("toast")][F("pause")]       | WIFI_TOAST_PAUSE;
+  Config_data.wifi.beacon.duration  = doc[F("wifi")][F("beacon")][F("duration")]   | WIFI_BEACON_DURATION;
+  Config_data.wifi.beacon.pause     = doc[F("wifi")][F("beacon")][F("pause")]      | WIFI_BEACON_PAUSE;
   Config_data.hold.timeout          = doc[F("hold")][F("timeout")]                 | BUTTON_HOLD;
   Config_data.led.luminance.low     = doc[F("led")][F("luminance")][F("low")]      | LED_BRIGHTNESS_LOW;
   Config_data.led.luminance.high    = doc[F("led")][F("luminance")][F("high")]     | LED_BRIGHTNESS_HIGH;

@@ -17,6 +17,8 @@ static unsigned long Mode_ShowID_previousScriptLineCount = 0;
 
 
 void Mode_ShowID_Init() {
+  Wifi_Switch(WifiStateSelf);
+  
   Mode_ShowID_previousScript = LED_GetScript(Mode_ShowID_previousScriptLineCount);
   
   LED_ChangePattern(LEDOff);
@@ -50,12 +52,9 @@ void Mode_ShowID_Loop() {
 }
 
 
-void Mode_ShowID_Restore() {
-  LED_SetScript(Mode_ShowID_scriptLength, Mode_ShowID_script);
-}
-
-
 void Mode_ShowID_Shutdown() {
   LED_SetScript(Mode_ShowID_previousScriptLineCount, Mode_ShowID_previousScript);
   LED_Flash(1);
+  
+  Wifi_Switch(WifiStateListen);
 }

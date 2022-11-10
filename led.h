@@ -69,7 +69,6 @@ enum LEDPattern {
   LEDToast,
   LEDRave,
   LEDScript,
-  LEDPrevious,
 
   LEDMax = LEDScript
 };

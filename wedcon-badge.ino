@@ -39,24 +39,18 @@ void loop() {
     
     switch (oldMode) {
       case ModeProximity:
-        if (newMode != ModeShowID) {
-          Serial.printf("shutting down proximity mode\n");
-          Mode_Proximity_Shutdown();
-        }
+        Serial.printf("shutting down proximity mode\n");
+        Mode_Proximity_Shutdown();
         break;
 
       case ModeCustom:
-        if (newMode != ModeEditCustom) {
-          Serial.printf("shutting down custom mode\n");
-          Mode_Custom_Shutdown();
-        }
+        Serial.printf("shutting down custom mode\n");
+        Mode_Custom_Shutdown();
         break;
         
       case ModeOff:
-        if (newMode != ModeFlash) {
-          Serial.printf("shutting down off mode\n");
-          Mode_Off_Shutdown();
-        }
+        Serial.printf("shutting down off mode\n");
+        Mode_Off_Shutdown();
         break;
         
       case ModeShowID:
@@ -75,8 +69,7 @@ void loop() {
         break;
 
       default:
-        Serial.printf("shutting down unknown mode %d\n", newMode);
-        Mode_Flash_Init();
+        Serial.printf("shutting down unknown mode %d\n", oldMode);
         break;
     }
 
@@ -113,7 +106,6 @@ void loop() {
 
       default:
         Serial.printf("launching unknown mode %d\n", newMode);
-        Mode_Flash_Init();
         break;
     }
   }

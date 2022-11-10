@@ -76,7 +76,11 @@ void Mode_Edit_Custom_handleOnSave() {
 
   Serial.println("Script recorded to flash");
 
-  LED_ChangePattern(LEDScript);
+  if (!LED_LoadScript(LED_CUSTOM_SCRIPT_FILE_NAME)) {
+    LED_LoadScript(LED_DEFAULT_SCRIPT_FILE_NAME);
+  }
+  
+  Mode_Edit_Custom_webserver.send(200, "text/plain", "200: Valid");
 }
 
 

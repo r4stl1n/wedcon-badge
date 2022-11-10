@@ -59,11 +59,6 @@ void Mode_Proximity_Loop() {
 }
 
 
-void Mode_Proximity_Restore() {
-  LED_ChangePattern(Mode_lastPattern);
-}
-
-
 void Mode_Proximity_Shutdown() {
 }
 

@@ -7,5 +7,4 @@
 
 void Mode_Proximity_Init();
 void Mode_Proximity_Loop();
-void Mode_Proximity_Restore();
 void Mode_Proximity_Shutdown();
